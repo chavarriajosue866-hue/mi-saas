@@ -1,0 +1,21 @@
+{
+  "name": "mi-saas",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:push": "turbo run db:push --filter=@mi-saas/db",
+    "db:generate": "turbo run db:generate --filter=@mi-saas/db"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.5",
+    "postcss": "^8.5.28",
+    "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.19",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.5"
+  },
+  "packageManager": "pnpm@9.0.0"
+}

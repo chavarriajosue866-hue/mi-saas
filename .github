@@ -1,0 +1,37 @@
+# Dependencias
+node_modules/
+apps/api/uploads/
+.env
+.next/
+
+# Variables de entorno (IMPORTANTE: nunca subir .env con claves)
+.env
+.env.local
+.env.*.local
+
+# Builds generados
+dist/
+build/
+.next/
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Uploads (archivos subidos por usuarios)
+apps/api/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Base de datos local (si usas SQLite)
+*.db
+*.sqlite

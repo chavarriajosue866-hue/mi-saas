@@ -1,0 +1,28 @@
+{
+  "name": "@mi-saas/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.0.0",
+    "@fastify/multipart": "^7.0.0",
+    "@fastify/static": "^6.0.0",
+    "@fastify/swagger": "^8.0.0",
+    "@fastify/swagger-ui": "^2.0.0",
+    "@mi-saas/db": "workspace:*",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "fastify": "^4.26.0",
+    "resend": "^6.26.0",
+    "uuid": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+.turbo/
+.next/
+dist/
+build/
+apps/api/uploads/
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db

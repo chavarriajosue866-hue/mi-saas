@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  plan      String     @default("free")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  users     User[]
+  projects  Project[]
+  invitations Invitation[]
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  password     String
+  name         String?
+  avatar       String?      // <-- Agrega esta línea
+  role         String       @default("member")
+  tenantId     String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invitedUsers Invitation[] @relation("invitedBy")
+
+  @@index([tenantId])
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model Invitation {
+  id         String   @id @default(cuid())
+  email      String
+  role       String   @default("member")
+  token      String   @unique
+  tenantId   String
+  invitedBy  String
+  expiresAt  DateTime
+  accepted   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inviter    User     @relation("invitedBy", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([email, tenantId])
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([email])
+}
