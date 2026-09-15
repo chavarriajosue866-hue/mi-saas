@@ -7,74 +7,100 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Tenant {
-  id        String     @id @default(cuid())
-  name      String
-  slug      String     @unique
-  plan      String     @default("free")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  users     User[]
-  projects  Project[]
-  invitations Invitation[]
-}
-
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  password     String
+  id           String          @id @default(cuid())
   name         String?
-  avatar       String?      // <-- Agrega esta línea
-  role         String       @default("member")
-  tenantId     String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  email        String          @unique
+  password     String
+  image        String?
+  role         String          @default("member")
   
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  invitedUsers Invitation[] @relation("invitedBy")
+  // Configuración del negocio
+  businessName String?
+  taxId        String?         // Cédula Jurídica
+  currency     String          @default("USD")
+  timezone     String          @default("America/Costa_Rica")
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
-  @@index([tenantId])
-}
-
-model Project {
-  id        String   @id @default(cuid())
-  name      String
-  tenantId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@index([tenantId])
+  clients      Client[]
+  appointments Appointment[]
+  invoices     Invoice[]
+  projects     Project[]
+  sentInvitations Invitation[] @relation("invitedBy")
 }
 
 model Invitation {
-  id         String   @id @default(cuid())
-  email      String
-  role       String   @default("member")
-  token      String   @unique
-  tenantId   String
-  invitedBy  String
-  expiresAt  DateTime
-  accepted   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  inviter    User     @relation("invitedBy", fields: [invitedBy], references: [id], onDelete: Cascade)
-
-  @@index([token])
-  @@index([email, tenantId])
-}
-
-model PasswordReset {
   id        String   @id @default(cuid())
   email     String
-  token     String   @unique
+  role      String   @default("member")
+  status    String   @default("pending") // pending, accepted, expired
+  invitedBy String
+  inviter   User     @relation("invitedBy", fields: [invitedBy], references: [id])
   expiresAt DateTime
-  used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
 
-  @@index([token])
-  @@index([email])
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("active")
+  budget      Float    @default(0)
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  status      String   @default("active")
+  totalSpent  Float    @default(0)
+  lastContact String?
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  title     String
+  client    String
+  time      String
+  duration  String   @default("1h")
+  type      String   @default("meeting")
+  day       Int
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceId     String   @unique
+  client        String
+  amount        Float
+  date          String
+  dueDate       String
+  status        String   @default("pending")
+  attachmentUrl String?
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

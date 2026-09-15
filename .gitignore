@@ -1,11 +1,20 @@
+# Dependencies
 node_modules/
-.turbo/
+.pnpm-store/
+
+# Next.js
 .next/
-dist/
-build/
-apps/api/uploads/
+out/
+
+# Environment variables
 .env
 .env.local
-*.log
+.env.production.local
+
+# OS
 .DS_Store
 Thumbs.db
+
+# IDE
+.vscode/
+.idea/

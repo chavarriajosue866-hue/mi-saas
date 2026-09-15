@@ -9,50 +9,88 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
-        
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Credenciales inválidas");
+        }
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: { tenant: true }
         });
 
-        if (!user) return null;
+        if (!user) throw new Error("Usuario no encontrado");
 
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isPasswordValid) return null;
+        if (!isPasswordValid) throw new Error("Contraseña incorrecta");
 
         return {
           id: user.id,
-          email: user.email,
           name: user.name,
-          tenantId: user.tenantId,
-          role: user.role
+          email: user.email,
+          image: user.image,
+          role: user.role,
+          businessName: user.businessName,
+          taxId: user.taxId,
+          currency: user.currency,
+          timezone: user.timezone,
         };
-      }
-    })
+      },
+    }),
   ],
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.tenantId = user.tenantId;
+        token.id = user.id;
+        token.image = user.image;
         token.role = user.role;
+      }
+      if (trigger === "update" && session) {
+        token.name = session.name;
+        token.image = session.image;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).tenantId = token.tenantId;
-        (session.user as any).role = token.role;
+      if (session.user && token.id) {
+        (session.user as any).id = token.id;
+        
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { 
+            name: true, 
+            email: true, 
+            image: true, 
+            role: true, 
+            businessName: true, 
+            taxId: true, 
+            currency: true, 
+            timezone: true 
+          },
+        });
+
+        if (dbUser) {
+          session.user.name = dbUser.name;
+          session.user.email = dbUser.email;
+          session.user.image = dbUser.image;
+          (session.user as any).role = dbUser.role;
+          (session.user as any).businessName = dbUser.businessName;
+          (session.user as any).taxId = dbUser.taxId;
+          (session.user as any).currency = dbUser.currency;
+          (session.user as any).timezone = dbUser.timezone;
+        }
       }
       return session;
-    }
+    },
   },
-  pages: { signIn: "/login" },
-  secret: process.env.NEXTAUTH_SECRET || "super-secret-key-change-in-production",
+  pages: {
+    signIn: "/login",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 const handler = NextAuth(authOptions);

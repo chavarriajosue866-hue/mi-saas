@@ -1,24 +1,42 @@
-import { FastifyRequest, FastifyReply, FastifyInstance } from 'fastify';
+import { FastifyRequest, FastifyReply } from 'fastify';
+import { PrismaClient } from '@prisma/client';
 
-// Extender el tipo de Request para incluir el tenantId
+const prisma = new PrismaClient();
+
+// Extend FastifyRequest to include tenantId
 declare module 'fastify' {
   interface FastifyRequest {
-    tenantId: string;
+    tenantId?: string;
   }
 }
 
+/**
+ * Middleware to validate tenant isolation.
+ * Ensures every request has a valid x-tenant-id header.
+ */
 export async function tenantIsolationMiddleware(
   request: FastifyRequest,
   reply: FastifyReply
 ) {
-  // En producción, esto se extrae del payload del JWT (ej. request.user.tenantId)
-  // Para pruebas, lo leemos de un header seguro.
   const tenantId = request.headers['x-tenant-id'] as string;
 
   if (!tenantId) {
-    return reply.status(401).send({ error: 'Tenant ID is required' });
+    return reply.status(400).send({ error: 'Tenant ID is required' });
   }
 
-  // Inyectar en el contexto
-  request.tenantId = tenantId;
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+    });
+
+    if (!tenant) {
+      return reply.status(404).send({ error: 'Tenant not found' });
+    }
+
+    // Attach tenantId to the request object for use in routes
+    request.tenantId = tenantId;
+  } catch (error) {
+    console.error('Tenant validation error:', error);
+    return reply.status(500).send({ error: 'Internal server error during tenant validation' });
+  }
 }

@@ -41,10 +41,10 @@ export default function ForgotPasswordPage() {
     <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
       <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-          🔐 Recuperar Contraseña
+          🔐 Recuperar Password
         </h2>
         <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-          Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.
+          Ingresa tu email y te enviaremos un enlace para restablecer tu withtraseña.
         </p>
 
         {message && (
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
         </button>
 
         <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
-          ¿Recordaste tu contraseña?{' '}
+          ¿Recordaste tu withtraseña?{' '}
           <Link href="/login" style={{ color: '#2563eb', textDecoration: 'underline' }}>
             Iniciar sesión
           </Link>

@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
           const data = await res.json();
           setUsers(data.data || []);
         } catch (error) {
-          console.error('Error:', error);
+          withsole.error('Error:', error);
         } finally {
           setLoading(false);
         }
@@ -39,7 +39,7 @@ export default function AdminUsersPage() {
     }
   }, [status, session]);
 
-  if (status === 'loading') return <p style={{ padding: '2rem' }}>Cargando...</p>;
+  if (status === 'loading') return <p style={{ padding: '2rem' }}>Loading...</p>;
   
   if (status === 'unauthenticated') {
     return (
@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
             </p>
           </div>
           <div style={{ padding: '1rem', backgroundColor: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a' }}>
-            <p style={{ fontSize: '0.875rem', color: '#854d0e', fontWeight: '500' }}>Miembros</p>
+            <p style={{ fontSize: '0.875rem', color: '#854d0e', fontWeight: '500' }}>Members</p>
             <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#713f12' }}>
               {users.filter(u => u.role === 'member').length}
             </p>
@@ -135,9 +135,9 @@ export default function AdminUsersPage() {
               <thead>
                 <tr style={{ backgroundColor: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
                   <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Email</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Nombre</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Rol</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Fecha de Registro</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Name</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Role</th>
+                  <th style={{ padding: '0.75rem', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Date de Registro</th>
                 </tr>
               </thead>
               <tbody>

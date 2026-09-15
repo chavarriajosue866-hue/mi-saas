@@ -96,7 +96,7 @@ export default function AcceptInvitePage() {
     return (
       <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
-          <h2 style={{ color: 'green' }}>¡Bienvenido!</h2>
+          <h2 style={{ color: 'green' }}>Welcome!</h2>
           <p>Te has unido exitosamente al tenant.</p>
         </div>
       </main>
@@ -125,7 +125,7 @@ export default function AcceptInvitePage() {
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Crea una contraseña</label>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Crea una withtraseña</label>
           <input 
             type="password" 
             value={password} 
@@ -140,7 +140,7 @@ export default function AcceptInvitePage() {
           type="submit" 
           style={{ width: '100%', padding: '0.75rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
         >
-          Aceptar invitación
+          Accept invitación
         </button>
       </form>
     </main>

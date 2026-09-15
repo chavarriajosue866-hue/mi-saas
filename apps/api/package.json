@@ -8,16 +8,21 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.124.0",
     "@fastify/cors": "^8.0.0",
     "@fastify/multipart": "^7.0.0",
+    "@fastify/rate-limit": "9.0.0",
     "@fastify/static": "^6.0.0",
     "@fastify/swagger": "^8.0.0",
     "@fastify/swagger-ui": "^2.0.0",
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@mi-saas/db": "workspace:*",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "fastify": "^4.26.0",
     "resend": "^6.26.0",
+    "stripe": "^22.6.1",
+    "twilio": "^6.1.0",
     "uuid": "^14.0.2"
   },
   "devDependencies": {

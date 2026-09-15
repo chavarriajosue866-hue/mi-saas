@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
   const token = searchParams.get('token');
 
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [withfirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,13 +47,13 @@ export default function ResetPasswordPage() {
     setMessage('');
     setError('');
 
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+    if (password !== withfirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
         throw new Error(data.error);
       }
 
-      setMessage('✅ Contraseña actualizada exitosamente. Redirigiendo al login...');
+      setMessage('✅ Current passwordizada exitosamente. Redirigiendo al login...');
       setTimeout(() => router.push('/login'), 2000);
     } catch (err: any) {
       setError(err.message);
@@ -107,10 +107,10 @@ export default function ResetPasswordPage() {
     <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
       <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-          🔑 Nueva Contraseña
+          🔑 Nueva Password
         </h2>
         <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-          Ingresa tu nueva contraseña.
+          Ingresa tu nueva withtraseña.
         </p>
 
         {message && (
@@ -126,7 +126,7 @@ export default function ResetPasswordPage() {
         )}
 
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>Nueva contraseña</label>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>New password</label>
           <input
             type="password"
             value={password}
@@ -138,10 +138,10 @@ export default function ResetPasswordPage() {
         </div>
 
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>Confirmar contraseña</label>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>Confirm withtraseña</label>
           <input
             type="password"
-            value={confirmPassword}
+            value={withfirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             minLength={6}
@@ -163,7 +163,7 @@ export default function ResetPasswordPage() {
             cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? 'Actualizando...' : 'Actualizar contraseña'}
+          {loading ? 'Actualizando...' : 'Update withtraseña'}
         </button>
       </form>
     </main>

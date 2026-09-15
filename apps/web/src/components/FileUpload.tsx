@@ -17,7 +17,7 @@ export default function FileUpload({
   userEmail,
   onUploadComplete, 
   currentImage,
-  label = 'Subir archivo'
+  label = 'Upload file'
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentImage);
@@ -45,11 +45,12 @@ export default function FileUpload({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Error al subir archivo');
+        throw new Error(data.error || 'Error uploading file');
       }
 
-      setPreview(data.url || data.avatar);
-      onUploadComplete(data.url || data.avatar);
+      const imageUrl = data.url || data.avatar;
+      setPreview(imageUrl);
+      onUploadComplete(imageUrl);
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -95,7 +96,7 @@ export default function FileUpload({
           fontWeight: '500'
         }}
       >
-        {uploading ? 'Subiendo...' : label}
+        {uploading ? 'Uploading...' : label}
       </button>
     </div>
   );
