@@ -76,10 +76,12 @@ git clone https://github.com/chavarriajosue866-hue/mi-saas.git
 cd mi-saas
 
 2. Install dependencies:
+```bash
 pnpm install
 
 3. Set up environment variables:
 Create a .env.local file in apps/web/ with:
+```bash
 DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
@@ -89,14 +91,17 @@ UPLOADTHING_SECRET="..."
 UPLOADTHING_APP_ID="..."
 
 4. Run database migrations:
+```bash
 cd packages/db
 pnpm prisma migrate deploy
 
 5. Start the development server:
+```bash
 cd apps/web
 pnpm dev
 
 6. See the application
+```bash
 Open http://localhost:3000 to see the application.
 
 🤝 Contributing
