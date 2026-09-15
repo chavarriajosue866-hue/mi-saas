@@ -23,22 +23,22 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](.mi-saas\screenshots\1)
+![Dashboard](.\screenshots\1)
 
 ### Schedule
-![Schedule](.mi-saas\screenshots\2)
+![Schedule](.\screenshots\2)
 
 ### Clients
-![Clients](.mi-saas\screenshots\3)
+![Clients](.\screenshots\3)
 
 ### Invoices
-![Invoices](.mi-saas\screenshots\4)
+![Invoices](.\screenshots\4)
 
 ### Projects
-![Projects](.mi-saas\screenshots\5)
+![Projects](.\screenshots\5)
 
 ### AI Assistant
-![AI Assistant](.mi-saas\screenshots\12)
+![AI Assistant](.\screenshots\12)
 
 ## 🛠️ Tech Stack
 
