@@ -23,19 +23,19 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](./apps/web/public/1.png)
+![Dashboard](./apps/web/public/2.png)
 
 ### Schedule
-![Schedule](./apps/web/public/2.png)
+![Schedule](./apps/web/public/3.png)
 
 ### Clients
-![Clients](./apps/web/public/3.png)
+![Clients](./apps/web/public/4.png)
 
 ### Invoices
-![Invoices](./apps/web/public/4.png)
+![Invoices](./apps/web/public/5.png)
 
 ### Projects
-![Projects](./apps/web/public/5.png)
+![Projects](./apps/web/public/6.png)
 
 ### AI Assistant
 ![AI Assistant](./apps/web/public/12.png)
