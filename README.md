@@ -72,14 +72,14 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 
 1. Clone the repository:
 
-\`\`\`bash
+```bash
 git clone https://github.com/chavarriajosue866-hue/mi-saas.git
 cd mi-saas
-\`\`\`
+```
 
 2. Install dependencies:
 
-\`\`\`bash
+````bash
 pnpm install
 \`\`\`
 
