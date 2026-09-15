@@ -23,22 +23,22 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](./screenshots/1)
+![Dashboard](.mi-saas\screenshots\1)
 
 ### Schedule
-![Schedule](./screenshots/2)
+![Schedule](.mi-saas\screenshots\2)
 
 ### Clients
-![Clients](./screenshots/3)
+![Clients](.mi-saas\screenshots\3)
 
 ### Invoices
-![Invoices](./screenshots/4)
+![Invoices](.mi-saas\screenshots\4)
 
 ### Projects
-![Projects](./screenshots/5)
+![Projects](.mi-saas\screenshots\5)
 
 ### AI Assistant
-![AI Assistant](./screenshots/12)
+![AI Assistant](.mi-saas\screenshots\12)
 
 ## 🛠️ Tech Stack
 
@@ -72,7 +72,7 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/mi-saas.git
+git clone https://github.com/chavarriajosue866-hue/mi-saas.git
 cd mi-saas
 
 2. Install dependencies:
@@ -99,41 +99,6 @@ pnpm dev
 6. See the application
 Open http://localhost:3000 to see the application.
 
-🎨 Key Features in Detail
-Dashboard Analytics
-Real-time visualization of business metrics including:
-Total revenue (paid invoices)
-Pending payments
-Overdue invoices
-Monthly revenue trends
-Invoice status distribution
-Invoice Management
-Create professional invoices with custom details
-Track payment status (Paid, Pending, Overdue)
-Generate PDF invoices for download
-Export all invoices to CSV for accounting
-Filter and search by client or status
-AI Business Assistant
-Powered by Groq's Llama 3 model, the AI assistant can:
-Answer questions about your business
-Provide insights on clients and invoices
-Help with scheduling and planning
-Respond in context of your business data
-Team Collaboration
-Invite team members via email
-Role-based access (Admin, Member)
-Manage permissions and access levels
-Deployment
-Deploy to Vercel
-The easiest way to deploy is using the Vercel Platform:
-Push your code to GitHub
-Import your repository in Vercel
-Configure environment variables
-Deploy!
-Environment Variables for Production
-Make sure to set all required environment variables in your Vercel dashboard.
-📝 License
-This project is licensed under the MIT License.
 🤝 Contributing
 Contributions, issues, and feature requests are welcome!
 👨‍💻 Author
