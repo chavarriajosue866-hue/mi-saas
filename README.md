@@ -23,22 +23,22 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 ## 📸 Screenshots
 
 ### Dashboard
-![Dashboard](.\screenshots\1)
+![Dashboard](./apps/web/public/1.png)
 
 ### Schedule
-![Schedule](.\screenshots\2)
+![Schedule](./apps/web/public/2.png)
 
 ### Clients
-![Clients](.\screenshots\3)
+![Clients](./apps/web/public/3.png)
 
 ### Invoices
-![Invoices](.\screenshots\4)
+![Invoices](./apps/web/public/4.png)
 
 ### Projects
-![Projects](.\screenshots\5)
+![Projects](./apps/web/public/5.png)
 
 ### AI Assistant
-![AI Assistant](.\screenshots\12)
+![AI Assistant](./apps/web/public/12.png)
 
 ## 🛠️ Tech Stack
 
