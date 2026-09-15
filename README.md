@@ -68,20 +68,26 @@ A modern, full-stack SaaS application for managing clients, invoices, projects, 
 - PostgreSQL database (or Neon free tier)
 - Groq API key (free at console.groq.com)
 
-### Setup
+## Setup
 
 1. Clone the repository:
-```bash
+
+\`\`\`bash
 git clone https://github.com/chavarriajosue866-hue/mi-saas.git
 cd mi-saas
+\`\`\`
 
 2. Install dependencies:
-```bash
+
+\`\`\`bash
 pnpm install
+\`\`\`
 
 3. Set up environment variables:
-Create a .env.local file in apps/web/ with:
-```bash
+
+Create a `.env.local` file in `apps/web/` with:
+
+\`\`\`bash
 DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="your-secret-key"
 NEXTAUTH_URL="http://localhost:3000"
@@ -89,23 +95,20 @@ GROQ_API_KEY="gsk_..."
 RESEND_API_KEY="re_..."
 UPLOADTHING_SECRET="..."
 UPLOADTHING_APP_ID="..."
+\`\`\`
 
 4. Run database migrations:
-```bash
+
+\`\`\`bash
 cd packages/db
 pnpm prisma migrate deploy
+\`\`\`
 
 5. Start the development server:
-```bash
+
+\`\`\`bash
 cd apps/web
 pnpm dev
+\`\`\`
 
-6. See the application
-```bash
-Open http://localhost:3000 to see the application.
-
-🤝 Contributing
-Contributions, issues, and feature requests are welcome!
-👨‍💻 Author
-Built with ❤️ for freelancers and small businesses.
-Star this repo if you find it helpful! ⭐
+6. Open [http://localhost:3000](http://localhost:3000) to see the application.
