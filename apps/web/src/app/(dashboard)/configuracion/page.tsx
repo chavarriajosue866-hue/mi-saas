@@ -36,7 +36,7 @@ export default function ConfiguracionPage() {
         email: session.user.email || "",
         businessName: (session.user as any).businessName || "",
         currency: (session.user as any).currency || "USD",
-        image: session.user.image || "",
+                image: (session.user as any).image || "",
       });
     }
   }, [session]);
