@@ -1,11 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@mi-saas/db";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma as any),
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -35,12 +33,18 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        return user;
+        // Devolvemos el usuario para que NextAuth lo guarde en el token JWT
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        };
       },
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt", // Usamos JWT, por eso no necesitamos el Prisma Adapter
   },
   pages: {
     signIn: "/login",
