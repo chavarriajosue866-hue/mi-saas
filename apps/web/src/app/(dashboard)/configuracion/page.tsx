@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { UploadButton } from "@/utils/uploadthing";
+import { UploadButton } from "@/lib/uploadthing";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 export default function ConfiguracionPage() {
