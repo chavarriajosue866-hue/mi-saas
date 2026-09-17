@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { LayoutDashboard, Calendar, Users, FileText, FolderKanban, Settings, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
