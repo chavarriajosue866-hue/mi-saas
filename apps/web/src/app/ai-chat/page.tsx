@@ -18,7 +18,17 @@ interface Conversation {
 }
 
 export default function AIChatPage() {
-  const { data: session } = useSession();
+     const { data: session, status } = useSession();
+
+   if (status === "loading") {
+     return <div className="flex items-center justify-center h-screen">Cargando chat...</div>;
+   }
+
+   if (!session) {
+     return <div className="flex items-center justify-center h-screen">Debes iniciar sesión para usar el chat</div>;
+   }
+
+   // El resto de tu código sigue igual...
   const [withversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversation] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

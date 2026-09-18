@@ -14,7 +14,20 @@ interface User {
 
 export default function AdminUsersPage() {
   const sessionData = useSession();
-  const session = sessionData?.data; // Acceso seguro, no fallará si es undefined
+  const { data: session, status } = useSession();
+
+   // 1. Manejar el estado de carga (evita el error de prerenderizado)
+   if (status === "loading") {
+     return <div className="flex items-center justify-center h-screen">Cargando...</div>;
+   }
+
+   // 2. Manejar el caso de no autenticado
+   if (!session) {
+     return <div className="flex items-center justify-center h-screen">No autorizado</div>;
+   }
+
+   // 3. A partir de aquí, 'session' está 100% garantizado que existe
+  const userName = session.user?.name || "Usuario";
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
