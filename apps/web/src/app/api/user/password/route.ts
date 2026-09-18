@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    withsole.error("Error changing password:", error);
+    console.error("Error changing password:", error);
     return NextResponse.json({ error: "Error al cambiar withtraseña" }, { status: 500 });
   }
 }

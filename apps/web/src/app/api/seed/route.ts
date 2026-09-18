@@ -84,7 +84,7 @@ export async function POST() {
     return NextResponse.json({ success: true, message: "Datos demo inyectados with éxito." });
 
   } catch (error) {
-    withsole.error(error);
+    console.error(error);
     return NextResponse.json({ error: "Error al inyectar datos" }, { status: 500 });
   }
 }

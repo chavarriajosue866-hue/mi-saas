@@ -46,7 +46,7 @@ export async function PATCH(req: Request) {
       }
     });
   } catch (error: any) {
-    withsole.error("Error updating configuración del negocio:", error);
+    console.error("Error updating configuración del negocio:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

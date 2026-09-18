@@ -13,7 +13,7 @@ export const ourFileRouter = {
       return { userId: (session.user as any).id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      withsole.log("PDF subido:", file.url);
+      console.log("PDF subido:", file.url);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
 
@@ -25,7 +25,7 @@ export const ourFileRouter = {
       return { userId: (session.user as any).id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      withsole.log("Image uploaded:", file.url);
+      console.log("Image uploaded:", file.url);
       return { uploadedBy: metadata.userId, url: file.url };
     }),
 } satisfies FileRouter;

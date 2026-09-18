@@ -20,7 +20,7 @@ export async function GET() {
 
     return NextResponse.json(clients);
   } catch (error) {
-    withsole.error("Error loading clients:", error);
+    console.error("Error loading clients:", error);
     return NextResponse.json({ error: "Error loading clients" }, { status: 500 });
   }
 }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(client);
   } catch (error: any) {
-    withsole.error("Error creating client:", error);
+    console.error("Error creating client:", error);
     return NextResponse.json({ error: error.message || "Error creating client" }, { status: 500 });
   }
 }

@@ -34,7 +34,7 @@ export async function PATCH(
 
     return NextResponse.json(client);
   } catch (error: any) {
-    withsole.error("Error updating cliente:", error);
+    console.error("Error updating cliente:", error);
     return NextResponse.json({ error: error.message || "Error updating cliente" }, { status: 500 });
   }
 }
@@ -61,7 +61,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    withsole.error("Error deleting client:", error);
+    console.error("Error deleting client:", error);
     return NextResponse.json({ error: error.message || "Error deleting client" }, { status: 500 });
   }
 }

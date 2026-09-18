@@ -48,13 +48,13 @@ export async function POST(
     });
 
     if (error) {
-      withsole.error("Error de Resend:", error);
+      console.error("Error de Resend:", error);
       return NextResponse.json({ error: "Error al enviar el email" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, messageId: data?.id });
   } catch (error) {
-    withsole.error("Error en API de envío:", error);
+    console.error("Error en API de envío:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }

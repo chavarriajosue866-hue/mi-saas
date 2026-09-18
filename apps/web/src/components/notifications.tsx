@@ -87,7 +87,7 @@ export function Notifications() {
       setNotifications(newNotifications);
       setUnreadCount(newNotifications.length);
     } catch (error) {
-      withsole.error("Error fetching notifications:", error);
+      console.error("Error fetching notifications:", error);
     }
   };
 

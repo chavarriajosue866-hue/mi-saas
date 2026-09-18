@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json(invoice);
   } catch (error) {
-    withsole.error("Error creating invoice:", error);
+    console.error("Error creating invoice:", error);
     return NextResponse.json({ error: "Error creating invoice" }, { status: 500 });
   }
 }
