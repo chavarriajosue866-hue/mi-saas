@@ -23,7 +23,7 @@ export default function AdminUsersPage() {
         try {
           const res = await fetch('http://localhost:3001/users', {
             headers: { 
-              'x-tenant-id': session.user.tenantId!,
+              'x-tenant-id': (session as any)?.user?.tenantId || '',
               'Content-Type': 'application/json'
             },
           });
