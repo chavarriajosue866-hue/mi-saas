@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { UploadButton } from "@/lib/uploadthing";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 export default function ConfiguracionPage() {
   const { data: session, update } = useSession();
@@ -163,28 +162,27 @@ export default function ConfiguracionPage() {
             )}
             <div className="flex flex-col gap-2">
               <p className="font-medium">Profile photo</p>
-              <UploadButton<OurFileRouter, "imageUploader">
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  if (res?.[0]?.url) {
-                    setFormData({ ...formData, image: res[0].url });
-                    toast.success("Photo uploaded successfully");
-                  }
-                }}
-                onUploadError={(error: Error) => {
-                  toast.error(`Upload failed: ${error.message}`);
-                }}
-                content={{
-                  button({ ready }) {
-                    return ready ? "Upload new photo" : "Loading...";
-                  },
-                  allowedContent({ isUploading }) {
-                    return null;
-                  },
-                }}
-                className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
-              />
-            </div>
+<UploadButton
+  endpoint="imageUploader"
+  onClientUploadComplete={(res) => {
+    if (res?.[0]?.url) {
+      setFormData({ ...formData, image: res[0].url });
+      toast.success("Photo uploaded successfully");
+    }
+  }}
+  onUploadError={(error: Error) => {
+    toast.error(`Upload failed: ${error.message}`);
+  }}
+  content={{
+    button({ ready }) {
+      return ready ? "Upload new photo" : "Loading...";
+    },
+    allowedContent({ isUploading }) {
+      return null;
+    },
+  }}
+  className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
+/>        </div>
           </div>
         </CardContent>
       </Card>
