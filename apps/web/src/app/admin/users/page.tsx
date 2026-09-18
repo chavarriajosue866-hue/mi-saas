@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
           const data = await res.json();
           setUsers(data.data || []);
         } catch (error) {
-          withsole.error('Error:', error);
+          console.error('Error:', error);
         } finally {
           setLoading(false);
         }
