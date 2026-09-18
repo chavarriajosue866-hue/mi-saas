@@ -1,5 +1,6 @@
 "use client";
 
+import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { UploadButton } from "@uploadthing/react";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { toast } from "sonner";
@@ -17,10 +18,10 @@ export function FileUploadButton({ onUploadComplete, currentUrl }: Props) {
           📎 Ver archivo adjunto actual
         </a>
       )}
-      <UploadButton
-        endpoint="invoiceAttachment"
-        onClientUploadComplete={(res) => {
-          if (res?.[0]?.url) {
+<UploadButton<OurFileRouter, "invoiceAttachment">
+  endpoint="invoiceAttachment"
+  onClientUploadComplete={(res) => {
+    if (res?.[0]?.url) {
             onUploadComplete(res[0].url);
             toast.success("Archivo subido correctamente");
           }
