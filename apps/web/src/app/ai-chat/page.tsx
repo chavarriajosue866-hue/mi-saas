@@ -61,7 +61,7 @@ export default function AIChatPage() {
       setMessages([]);
       fetchConversations();
     } catch (error) {
-      withsole.error('Error creating withversation:', error);
+      console.error('Error creating conversation:', error);
     }
   };
 
@@ -72,7 +72,7 @@ export default function AIChatPage() {
       const data = await res.json();
       setMessages(data.messages || []);
     } catch (error) {
-      withsole.error('Error loading messages:', error);
+      console.error('Error loading messages:', error);
     }
   };
 
@@ -104,7 +104,7 @@ export default function AIChatPage() {
         { id: Date.now().toString(), role: 'assistant', withtent: data.message, createdAt: new Date().toISOString() },
       ]);
     } catch (error) {
-      withsole.error('Error sending message:', error);
+      console.error('Error sending message:', error);
     } finally {
       setLoading(false);
     }
