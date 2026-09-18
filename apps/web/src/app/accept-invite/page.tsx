@@ -1,149 +1,121 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
-export default function AcceptInvitePage({ 
-  searchParams 
-}: { 
-  searchParams: { token?: string } 
-}) {
-  const token = searchParams.token; // Así obtienes el token de forma segura
-  const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error'>('loading');
-  const [error, setError] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [invitationData, setInvitationData] = useState<any>(null);
+function AcceptInviteContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [message, setMessage] = useState("");
+
+  const token = searchParams.get("token");
 
   useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setError('Token de invitación no válido');
-      return;
-    }
+    async function processInvite() {
+      if (!token) {
+        setStatus("error");
+        setMessage("Token de invitación no válido o faltante.");
+        return;
+      }
 
-    async function checkInvitation() {
       try {
-        const res = await fetch(`http://localhost:3001/invitations/${token}`);
+        // Ajusta esta ruta a tu endpoint real que procesa la invitación
+        const res = await fetch("/api/invitations/accept", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+
         const data = await res.json();
-        
-        if (!res.ok) throw new Error(data.error);
-        
-        setInvitationData(data);
-        setEmail(data.email);
-        setStatus('accepting');
-      } catch (err: any) {
-        setStatus('error');
-        setError(err.message);
+
+        if (res.ok) {
+          setStatus("success");
+          setMessage("¡Invitación aceptada con éxito! Redirigiendo...");
+          
+          // Si tu API requiere hacer login automático después, descomenta la siguiente línea:
+          // await signIn("credentials", { redirect: false });
+          
+          setTimeout(() => {
+            router.push("/");
+          }, 2000);
+        } else {
+          setStatus("error");
+          setMessage(data.error || "Error al procesar la invitación.");
+        }
+      } catch (error) {
+        setStatus("error");
+        setMessage("Ocurrió un error de conexión al procesar la invitación.");
       }
     }
 
-    checkInvitation();
-  }, [token]);
+    processInvite();
+  }, [token, router]);
 
-  const handleAccept = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('loading');
-
-    try {
-      const res = await fetch('http://localhost:3001/accept-invitation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, email, password })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      // Auto-login
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false
-      });
-
-      if (result?.ok) {
-        setStatus('success');
-        router.push('/');
-      } else {
-        throw new Error('Error al iniciar sesión');
-      }
-    } catch (err: any) {
-      setStatus('error');
-      setError(err.message);
-    }
-  };
-
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>Verificando invitación...</p>
-      </main>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>Procesando invitación</CardTitle>
+            <CardDescription>Por favor espera un momento...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
-  if (status === 'error') {
+  if (status === "error") {
     return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
-          <h2 style={{ color: 'red' }}>Error</h2>
-          <p>{error}</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (status === 'success') {
-    return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
-          <h2 style={{ color: 'green' }}>Welcome!</h2>
-          <p>Te has unido exitosamente al tenant.</p>
-        </div>
-      </main>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <CardTitle className="text-red-600">Error</CardTitle>
+            <CardDescription>{message}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => router.push("/login")}>Volver al inicio de sesión</Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
-      <form onSubmit={handleAccept} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-          🎉 ¡Te han invitado!
-        </h2>
-        <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1.5rem' }}>
-          Únete a <strong>{invitationData?.tenantName}</strong> como <strong>{invitationData?.role}</strong>
-        </p>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+          <CardTitle className="text-green-600">¡Éxito!</CardTitle>
+          <CardDescription>{message}</CardDescription>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+}
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Email</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }} 
-          />
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Crea una withtraseña</label>
-          <input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            required 
-            minLength={6}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }} 
-          />
-        </div>
-
-        <button 
-          type="submit" 
-          style={{ width: '100%', padding: '0.75rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
-        >
-          Accept invitación
-        </button>
-      </form>
-    </main>
+export default function AcceptInvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>Cargando...</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <AcceptInviteContent />
+    </Suspense>
   );
 }

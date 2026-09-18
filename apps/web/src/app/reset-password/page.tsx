@@ -1,172 +1,168 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
-export default function ResetPasswordPage({ 
-  searchParams 
-}: { 
-  searchParams: { token?: string } 
-}) {
-  const token = searchParams.token;
+function ResetPasswordContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const [password, setPassword] = useState('');
-  const [withfirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [validToken, setValidToken] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!token) {
-      setValidToken(false);
-      setError('Token de recuperación no válido');
-      return;
-    }
-
-    async function verifyToken() {
-      try {
-        const res = await fetch(`http://localhost:3001/auth/reset-password/${token}`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error);
-        }
-
-        setValidToken(true);
-      } catch (err: any) {
-        setValidToken(false);
-        setError(err.message);
-      }
-    }
-
-    verifyToken();
-  }, [token]);
+  const token = searchParams.get("token");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage('');
-    setError('');
+    setErrorMessage("");
 
-    if (password !== withfirmPassword) {
-      setError('Passwords do not match');
+    if (!token) {
+      setErrorMessage("Enlace de restablecimiento no válido o expirado.");
+      setStatus("error");
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setErrorMessage("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
-    setLoading(true);
+    if (password !== confirmPassword) {
+      setErrorMessage("Las contraseñas no coinciden.");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3001/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password }),
+      // Ajusta esta ruta a tu endpoint real de reseteo de contraseña
+      const res = await fetch("/api/user/password", {
+        method: "PATCH", // o "POST", según cómo lo tengas configurado
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword: password }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error);
+      if (res.ok) {
+        setStatus("success");
+        toast.success("Contraseña restablecida con éxito");
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+      } else {
+        setStatus("error");
+        setErrorMessage(data.error || "Error al restablecer la contraseña.");
       }
-
-      setMessage('✅ Current passwordizada exitosamente. Redirigiendo al login...');
-      setTimeout(() => router.push('/login'), 2000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage("Ocurrió un error de conexión.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (validToken === null) {
+  if (status === "success") {
     return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p>Verificando token...</p>
-      </main>
-    );
-  }
-
-  if (validToken === false) {
-    return (
-      <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
-        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center', maxWidth: '400px' }}>
-          <h2 style={{ color: 'red', marginBottom: '1rem' }}>Enlace inválido</h2>
-          <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>{error}</p>
-          <Link href="/forgot-password" style={{ color: '#2563eb', textDecoration: 'underline' }}>
-            Solicitar nuevo enlace
-          </Link>
-        </div>
-      </main>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+            <CardTitle className="text-green-600">¡Contraseña actualizada!</CardTitle>
+            <CardDescription>Ya puedes iniciar sesión con tu nueva contraseña.</CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center">
+            <Button onClick={() => router.push("/login")}>Ir al inicio de sesión</Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' }}>
-      <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-          🔑 Nueva Password
-        </h2>
-        <p style={{ textAlign: 'center', color: '#6b7280', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
-          Ingresa tu nueva withtraseña.
-        </p>
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle>Restablecer contraseña</CardTitle>
+          <CardDescription>Ingresa tu nueva contraseña a continuación.</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {status === "error" && (
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm flex items-center gap-2 border border-red-200">
+                <XCircle className="h-4 w-4 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Nueva contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                disabled={isLoading}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                "Restablecer contraseña"
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
+  );
+}
 
-        {message && (
-          <div style={{ padding: '0.75rem', backgroundColor: '#d1fae5', color: '#065f46', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div style={{ padding: '0.75rem', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-            {error}
-          </div>
-        )}
-
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>New password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', fontSize: '0.875rem' }}>Confirm withtraseña</label>
-          <input
-            type="password"
-            value={withfirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            minLength={6}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '6px' }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '0.75rem',
-            backgroundColor: loading ? '#9ca3af' : '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {loading ? 'Actualizando...' : 'Update withtraseña'}
-        </button>
-      </form>
-    </main>
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Cargando...</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
