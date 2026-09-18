@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   const userName = session?.user?.name || "User";
   const userEmail = session?.user?.email || "user@example.com";
-  const userImage = session?.user?.image || `https://ui-avatars.com/api/?name=${userName}&background=0D8ABC&color=fff`;
+ const userImage = (session?.user as any)?.image || `https://ui-avatars.com/api/?name=${userName}&background=0D8ABC&color=fff`;
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
