@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: '1px solid #e5e7eb', ':hover': { backgroundColor: '#f9fafb' } }}>
+                  <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td style={{ padding: '0.75rem', color: '#111827', fontWeight: '500' }}>{user.email}</td>
                     <td style={{ padding: '0.75rem', color: '#6b7280' }}>{user.name || '-'}</td>
                     <td style={{ padding: '0.75rem' }}>
