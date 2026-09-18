@@ -131,7 +131,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
                   <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
                   <Tooltip 
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
+                    formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Revenue"]}
                     contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
                   />
                   <Bar dataKey="revenue" fill="#0D8ABC" radius={[4, 4, 0, 0]} />
