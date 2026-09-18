@@ -13,7 +13,8 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  const { data: session, status } = useSession();
+  const sessionData = useSession();
+  const session = sessionData?.data; // Acceso seguro, no fallará si es undefined
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 

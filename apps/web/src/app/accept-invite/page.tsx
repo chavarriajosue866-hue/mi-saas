@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
-export default function AcceptInvitePage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const token = searchParams.get('token');
+export default function AcceptInvitePage({ 
+  searchParams 
+}: { 
+  searchParams: { token?: string } 
+}) {
+  const token = searchParams.token; // Así obtienes el token de forma segura
   const [status, setStatus] = useState<'loading' | 'accepting' | 'success' | 'error'>('loading');
   const [error, setError] = useState('');
   const [email, setEmail] = useState('');
