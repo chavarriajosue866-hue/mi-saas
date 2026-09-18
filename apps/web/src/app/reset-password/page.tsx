@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,9 +44,8 @@ function ResetPasswordContent() {
     setIsLoading(true);
 
     try {
-      // Ajusta esta ruta a tu endpoint real de reseteo de contraseña
       const res = await fetch("/api/user/password", {
-        method: "PATCH", // o "POST", según cómo lo tengas configurado
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword: password }),
       });
@@ -80,9 +79,9 @@ function ResetPasswordContent() {
             <CardTitle className="text-green-600">¡Contraseña actualizada!</CardTitle>
             <CardDescription>Ya puedes iniciar sesión con tu nueva contraseña.</CardDescription>
           </CardHeader>
-          <CardFooter className="justify-center">
+          <div className="p-6 pt-0 flex justify-center">
             <Button onClick={() => router.push("/login")}>Ir al inicio de sesión</Button>
-          </CardFooter>
+          </div>
         </Card>
       </div>
     );
@@ -130,7 +129,7 @@ function ResetPasswordContent() {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <div className="p-6 pt-0">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -141,7 +140,7 @@ function ResetPasswordContent() {
                 "Restablecer contraseña"
               )}
             </Button>
-          </CardFooter>
+          </div>
         </form>
       </Card>
     </div>
