@@ -39,9 +39,9 @@ export default function AIChatPage() {
         },
       });
       const data = await res.json();
-      setConversations(data.withversations || []);
+            setConversations((data as any).conversations || []);
     } catch (error) {
-      withsole.error('Error fetching withversations:', error);
+      console.error('Error fetching conversations:', error);
     }
   };
 
