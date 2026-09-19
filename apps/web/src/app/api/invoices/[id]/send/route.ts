@@ -42,7 +42,7 @@ export async function POST(
             <li><strong>Due date:</strong> ${invoice.dueDate}</li>
             <li><strong>Status:</strong> ${invoice.status === 'paid' ? 'Paid' : 'Pending'}</li>
           </ul>
-          <p style="margin-top: 30px; color: #666;">Gracias por withfiar en nuestros servicios.</p>
+          <p style="margin-top: 30px; color: #666;">Gracias por confiar en nuestros servicios.</p>
         </div>
       `,
     });

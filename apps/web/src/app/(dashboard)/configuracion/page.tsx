@@ -11,7 +11,8 @@ import { toast } from "sonner";
 import { UploadButton } from "@/lib/uploadthing";
 
 export default function ConfiguracionPage() {
-  const { data: session, update } = useSession();
+  const sessionHook = useSession();
+  const session = sessionHook?.data ?? null;
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
