@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Send, Bot, User } from "lucide-react";
 
@@ -34,13 +33,10 @@ export default function AiChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll al final cuando hay nuevos mensajes
+  // Auto-scroll al final cuando hay nuevos mensajes (usando div nativo)
   useEffect(() => {
     if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector("[data-radix-scroll-area-viewport]");
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -74,7 +70,7 @@ export default function AiChatPage() {
     );
   }
 
-  // 3. Lógica del chat (ahora 'session' está 100% garantizado que existe)
+  // 3. Lógica del chat
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -98,7 +94,6 @@ export default function AiChatPage() {
         },
         body: JSON.stringify({
           message: userMessage.content,
-          // Puedes pasar el ID del usuario o tenant si tu API lo necesita
           userId: (session.user as any)?.id,
         }),
       });
@@ -135,15 +130,16 @@ export default function AiChatPage() {
   return (
     <div className="container mx-auto py-6 h-[calc(100vh-2rem)] flex flex-col">
       <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="border-b bg-muted/30 py-4">
+        <CardHeader className="border-b bg-muted/30 py-4 shrink-0">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bot className="h-5 w-5 text-primary" />
             Asistente de IA
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="flex-1 p-0 flex flex-col">
-          <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+        <CardContent className="flex-1 p-0 flex flex-col min-h-0">
+          {/* Div nativo con scroll en lugar de ScrollArea de shadcn */}
+          <div className="flex-1 overflow-y-auto p-4" ref={scrollAreaRef}>
             <div className="space-y-4">
               {messages.map((msg) => (
                 <div
@@ -199,9 +195,9 @@ export default function AiChatPage() {
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
 
-          <div className="border-t p-4 bg-background">
+          <div className="border-t p-4 bg-background shrink-0">
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <Input
                 value={input}
