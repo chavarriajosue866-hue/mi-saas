@@ -13,6 +13,7 @@ import { UploadButton } from "@/lib/uploadthing";
 export default function ConfiguracionPage() {
   const sessionHook = useSession();
   const session = sessionHook?.data ?? null;
+  const update = sessionHook?.update;
   const [loading, setLoading] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -56,7 +57,7 @@ export default function ConfiguracionPage() {
       });
 
       if (res.ok) {
-        await update();
+        await
         toast.success("Profile updated successfully");
       } else {
         toast.error("Error updating profile");
