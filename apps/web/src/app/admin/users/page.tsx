@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-// Define un tipo básico para el usuario (ajústalo según tu modelo de Prisma)
 interface User {
   id: string;
   email: string;
@@ -15,13 +14,16 @@ interface User {
 }
 
 export default function AdminUsersPage() {
-  // 1. No desestructures. Guarda el resultado completo en una variable.
-  const sessionData = useSession();
+  // 1. PATRÓN DEFENSIVO: No desestructurar. Usar optional chaining (?.) y nullish coalescing (??)
+  const sessionHook = useSession();
+  const status = sessionHook?.status ?? "loading";
+  const session = sessionHook?.data ?? null;
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 2. Verifica el estado de carga usando la propiedad del objeto
-  if (sessionData.status === "loading") {
+  // 2. Si status es 'loading' (o si sessionHook fue undefined), mostramos carga
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -30,8 +32,8 @@ export default function AdminUsersPage() {
     );
   }
 
-  // 3. Verifica si no está autenticado o si no hay datos de sesión
-  if (sessionData.status === "unauthenticated" || !sessionData.data) {
+  // 3. Si no está autenticado o no hay sesión, mostramos acceso denegado
+  if (status === "unauthenticated" || !session) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Card className="w-full max-w-md text-center">
@@ -44,25 +46,21 @@ export default function AdminUsersPage() {
     );
   }
 
-  // 4. A partir de aquí, TypeScript sabe que 'sessionData.data' existe y es válido
-  const session = sessionData.data;
-
+  // 4. A partir de aquí, 'session' está 100% garantizado que existe
   useEffect(() => {
     async function fetchUsers() {
       try {
-        // NOTA: Cambia esta URL a tu endpoint real de API (ej: '/api/users') 
-        // en lugar de 'http://localhost:3001/users' para que funcione en Vercel.
+        // NOTA: Asegúrate de que esta ruta '/api/users' sea la correcta en tu proyecto
         const res = await fetch("/api/users", {
           headers: {
-            // Acceso seguro a tenantId usando 'as any' para evitar errores de tipado de NextAuth
-            "x-tenant-id": (session.user as any)?.tenantId || "",
+            "x-tenant-id": (session as any)?.user?.tenantId || "",
             "Content-Type": "application/json",
           },
         });
 
         if (res.ok) {
           const data = await res.json();
-          setUsers(data.data || data.users || []); // Ajusta según la respuesta de tu API
+          setUsers(data.data || data.users || []);
         } else {
           console.error("Error al obtener usuarios");
         }
@@ -90,9 +88,7 @@ export default function AdminUsersPage() {
       <Card>
         <CardHeader>
           <CardTitle>Gestión de Usuarios</CardTitle>
-          <CardDescription>
-            Administra los usuarios de tu plataforma.
-          </CardDescription>
+          <CardDescription>Administra los usuarios de tu plataforma.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -114,7 +110,6 @@ export default function AdminUsersPage() {
                   </tr>
                 ) : (
                   users.map((user) => (
-                    // Usamos className en lugar de style para el hover (corrección anterior)
                     <tr key={user.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                       <td className="p-3 text-gray-900 font-medium">{user.email}</td>
                       <td className="p-3 text-gray-600">{user.name || "-"}</td>
@@ -124,9 +119,7 @@ export default function AdminUsersPage() {
                         </span>
                       </td>
                       <td className="p-3">
-                        <Button variant="outline" size="sm">
-                          Editar
-                        </Button>
+                        <Button variant="outline" size="sm">Editar</Button>
                       </td>
                     </tr>
                   ))
