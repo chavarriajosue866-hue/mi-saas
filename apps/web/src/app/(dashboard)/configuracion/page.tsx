@@ -29,34 +29,39 @@ export default function ConfiguracionPage() {
   });
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetch("/api/user/profile")
-        .then((res) => {
+    // Solo cargar si está autenticado
+    if (status !== "authenticated") return;
+
+    const loadData = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        
+        if (!res.ok) {
           if (res.status === 401) {
             router.push("/login");
-            throw new Error("Unauthorized");
+            return;
           }
-          return res.json();
-        })
-        .then((data) => {
-          setFormData({
-            name: data.user?.name || "",
-            email: data.user?.email || "",
-            businessName: data.user?.businessName || "",
-            currency: data.user?.currency || "USD",
-            image: data.user?.image || "",
-          });
-        })
-        .catch((error) => {
-          console.error("Error loading profile:", error);
-          toast.error("Failed to load profile");
-        })
-        .finally(() => {
-          setIsLoading(false);
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        
+        setFormData({
+          name: data.user?.name ?? "",
+          email: data.user?.email ?? "",
+          businessName: data.user?.businessName ?? "",
+          currency: data.user?.currency ?? "USD",
+          image: data.user?.image ?? "",
         });
-    } else if (status === "unauthenticated") {
-      router.push("/login");
-    }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        toast.error("Failed to load profile data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [status, router]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -105,7 +110,7 @@ export default function ConfiguracionPage() {
     }
   };
 
-  // Loading state
+  // Loading state - con timeout de seguridad
   if (status === "loading" || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -117,8 +122,20 @@ export default function ConfiguracionPage() {
     );
   }
 
+  // Si no está autenticado después de cargar
+  if (status === "unauthenticated") {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Not authenticated</p>
+          <Button onClick={() => router.push("/login")}>Go to Login</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Manage your account and business settings</p>
@@ -143,8 +160,8 @@ export default function ConfiguracionPage() {
                 endpoint="imageUploader"
                 onClientUploadComplete={handlePhotoUpload}
                 onUploadError={(error) => {
-  toast.error(`Error: ${error.message}`);
-}}
+                  toast.error(`Upload failed: ${error.message}`);
+                }}
                 content={{
                   button({ ready }) {
                     return ready ? "Change photo" : "Uploading...";
