@@ -13,10 +13,11 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
-  const sessionHook = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -26,50 +27,43 @@ export default function ConfiguracionPage() {
   });
 
   useEffect(() => {
-    async function loadUserData() {
-      try {
-        const res = await fetch("/api/user/profile");
-        
-        if (res.status === 401) {
-          router.push("/login");
-          return;
-        }
-
-        if (!res.ok) {
-          throw new Error("Failed to load profile");
-        }
-
-        const data = await res.json();
-        
-        setFormData({
-          name: data.user?.name || "",
-          email: data.user?.email || "",
-          businessName: data.user?.businessName || "",
-          currency: data.user?.currency || "USD",
-          image: data.user?.image || "",
-        });
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        toast.error("Failed to load profile data");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    // ✅ FIX: Usar optional chaining para evitar "Cannot read properties of undefined"
-    const status = sessionHook?.status;
-    
+    // Si está autenticado, cargar datos
     if (status === "authenticated") {
-      loadUserData();
-    } else if (status === "unauthenticated") {
+      fetch("/api/user/profile")
+        .then((res) => {
+          if (res.status === 401) {
+            router.push("/login");
+            throw new Error("Unauthorized");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          setFormData({
+            name: data.user?.name || "",
+            email: data.user?.email || "",
+            businessName: data.user?.businessName || "",
+            currency: data.user?.currency || "USD",
+            image: data.user?.image || "",
+          });
+        })
+        .catch((error) => {
+          console.error("Error loading profile:", error);
+          toast.error("Failed to load profile");
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } 
+    // Si no está autenticado y terminó de cargar, redirigir
+    else if (status === "unauthenticated") {
       router.push("/login");
     }
-    // Si status es "loading" o undefined, esperamos al siguiente render
-  }, [sessionHook?.status, router]);
+    // Si status es "loading", esperamos
+  }, [status, router]);
 
-  const handleSaveChanges = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSaving(true);
 
     try {
       const res = await fetch("/api/user/profile", {
@@ -83,44 +77,38 @@ export default function ConfiguracionPage() {
       });
 
       if (res.ok) {
-        toast.success("Changes saved successfully!");
+        toast.success("Changes saved!");
       } else {
-        toast.error("Error saving changes");
+        throw new Error("Failed to save");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Connection error");
+      toast.error("Error saving changes");
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
-      setFormData({ ...formData, image: imageUrl });
+      setFormData((prev) => ({ ...prev, image: imageUrl }));
       
       try {
-        const response = await fetch("/api/user/profile", {
+        await fetch("/api/user/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: imageUrl }),
         });
-
-        if (response.ok) {
-          toast.success("Profile photo updated!");
-        } else {
-          toast.error("Error saving photo");
-        }
+        toast.success("Photo updated!");
       } catch (error) {
-        console.error("Failed to save image:", error);
-        toast.error("Connection error");
+        toast.error("Error saving photo");
       }
     }
   };
 
-  // ✅ FIX: Usar optional chaining aquí también
-  if (sessionHook?.status === "loading" || loading) {
+  // Loading state
+  if (status === "loading" || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -135,9 +123,7 @@ export default function ConfiguracionPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account and business settings
-        </p>
+        <p className="text-muted-foreground">Manage your account and business settings</p>
       </div>
 
       <Card>
@@ -158,22 +144,16 @@ export default function ConfiguracionPage() {
               <UploadButton
                 endpoint="imageUploader"
                 onClientUploadComplete={handlePhotoUpload}
-                onUploadError={(error: Error) => {
-                  toast.error(`Upload failed: ${error.message}`);
-                }}
+                onUploadError={(error: Error) => toast.error(`Error: ${error.message}`)}
                 content={{
                   button({ ready }) {
                     return ready ? "Change photo" : "Uploading...";
                   },
-                  allowedContent({ isUploading }) {
-                    return null;
-                  },
+                  allowedContent: () => null,
                 }}
                 className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Image (2MB)
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Image (2MB)</p>
             </div>
           </div>
         </CardContent>
@@ -184,7 +164,7 @@ export default function ConfiguracionPage() {
           <CardTitle>Profile Information</CardTitle>
           <CardDescription>Update your personal details</CardDescription>
         </CardHeader>
-        <form onSubmit={handleSaveChanges}>
+        <form onSubmit={handleSave}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -198,16 +178,8 @@ export default function ConfiguracionPage() {
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed
-              </p>
+              <Input id="email" type="email" value={formData.email} disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
 
             <div className="space-y-2">
@@ -231,8 +203,8 @@ export default function ConfiguracionPage() {
             </div>
           </CardContent>
           <div className="p-6 pt-0">
-            <Button type="submit" disabled={loading}>
-              {loading ? (
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
