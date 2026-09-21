@@ -13,7 +13,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
-  const { data: session, status } = useSession();
+  const sessionHook = useSession();
+  const session = sessionHook?.data ?? null;
+  const status = sessionHook?.status ?? "loading";
   const router = useRouter();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +29,6 @@ export default function ConfiguracionPage() {
   });
 
   useEffect(() => {
-    // Si está autenticado, cargar datos
     if (status === "authenticated") {
       fetch("/api/user/profile")
         .then((res) => {
@@ -53,12 +54,9 @@ export default function ConfiguracionPage() {
         .finally(() => {
           setIsLoading(false);
         });
-    } 
-    // Si no está autenticado y terminó de cargar, redirigir
-    else if (status === "unauthenticated") {
+    } else if (status === "unauthenticated") {
       router.push("/login");
     }
-    // Si status es "loading", esperamos
   }, [status, router]);
 
   const handleSave = async (e: React.FormEvent) => {
