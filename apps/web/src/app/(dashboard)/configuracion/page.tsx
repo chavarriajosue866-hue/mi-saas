@@ -10,12 +10,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UploadButton } from "@/lib/uploadthing";
 import { Loader2, User } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
   const sessionHook = useSession();
-  const session = sessionHook?.data ?? null;
+  const router = useRouter();
   
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -24,32 +25,46 @@ export default function ConfiguracionPage() {
     image: "",
   });
 
-  // 1. CARGAR DATOS DEL USUARIO AL MONTAR EL COMPONENTE
+  // CARGAR DATOS DEL USUARIO
   useEffect(() => {
     async function loadUserData() {
-      if (!session?.user) return;
-
       try {
         const res = await fetch("/api/user/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setFormData({
-            name: data.user?.name || "",
-            email: data.user?.email || "",
-            businessName: data.user?.businessName || "",
-            currency: data.user?.currency || "USD",
-            image: data.user?.image || "",
-          });
+        
+        if (res.status === 401) {
+          router.push("/login");
+          return;
         }
+
+        if (!res.ok) {
+          throw new Error("Failed to load profile");
+        }
+
+        const data = await res.json();
+        
+        setFormData({
+          name: data.user?.name || "",
+          email: data.user?.email || "",
+          businessName: data.user?.businessName || "",
+          currency: data.user?.currency || "USD",
+          image: data.user?.image || "",
+        });
       } catch (error) {
         console.error("Error loading user data:", error);
+        toast.error("Failed to load profile data");
+      } finally {
+        setLoading(false);
       }
     }
 
-    loadUserData();
-  }, [session?.user]);
+    if (sessionHook.status === "authenticated") {
+      loadUserData();
+    } else if (sessionHook.status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [sessionHook.status, router]);
 
-  // 2. GUARDAR CAMBIOS
+  // GUARDAR CAMBIOS
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -62,7 +77,6 @@ export default function ConfiguracionPage() {
           name: formData.name,
           businessName: formData.businessName,
           currency: formData.currency,
-          // NO enviamos image aquí porque se guarda automáticamente al subir
         }),
       });
 
@@ -79,15 +93,13 @@ export default function ConfiguracionPage() {
     }
   };
 
-  // 3. ACTUALIZAR FOTO DE PERFIL
+  // ACTUALIZAR FOTO DE PERFIL
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
       
-      // Actualizar estado local
       setFormData({ ...formData, image: imageUrl });
       
-      // Guardar en base de datos
       try {
         const response = await fetch("/api/user/profile", {
           method: "PATCH",
@@ -107,38 +119,16 @@ export default function ConfiguracionPage() {
     }
   };
 
-// Solo mostrar loading si realmente está cargando
-if (sessionHook?.status === "loading") {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <span className="ml-2">Loading...</span>
-    </div>
-  );
-}
-
-// Si no hay sesión después de cargar, redirigir o mostrar mensaje más amigable
-if (!session && sessionHook?.status === "unauthenticated") {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-center">
-        <p className="text-muted-foreground mb-4">Session expired or not authenticated</p>
-        <Button onClick={() => window.location.href = "/login"}>
-          Go to Login
-        </Button>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
       </div>
-    </div>
-  );
-}
-
-// Si llegamos aquí pero session es null, esperar un poco más (caso edge)
-if (!session) {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-}
+    );
+  }
 
   return (
     <div className="space-y-6">
