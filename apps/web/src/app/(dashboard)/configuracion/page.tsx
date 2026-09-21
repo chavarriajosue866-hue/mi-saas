@@ -168,43 +168,45 @@ export default function ConfiguracionPage() {
   endpoint="imageUploader"
   onClientUploadComplete={async (res) => {
     if (res?.[0]?.url) {
-      const newImageUrl = res[0].url;
+      const imageUrl = res[0].url;
       
-      // 1. Actualizar el estado visual
-      setFormData({ ...formData, image: newImageUrl });
+      // Actualizar estado local
+      setFormData({ ...formData, image: imageUrl });
       
-      // 2. ¡IMPORTANTE! Guardar en la base de datos
+      // Guardar en base de datos
       try {
-        const updateRes = await fetch("/api/user/profile", {
+        const response = await fetch("/api/user/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: newImageUrl }),
+          body: JSON.stringify({ image: imageUrl }),
         });
 
-        if (updateRes.ok) {
-          toast.success("Foto de perfil actualizada correctamente");
+        if (response.ok) {
+          toast.success("Profile photo updated successfully!");
         } else {
-          toast.error("Error al guardar la imagen en la base de datos");
+          const errorData = await response.json();
+          toast.error(`Error: ${errorData.error || "Failed to save"}`);
         }
       } catch (error) {
-        console.error(error);
-        toast.error("Error de conexión al guardar la imagen");
+        console.error("Failed to save image:", error);
+        toast.error("Connection error while saving image");
       }
     }
   }}
   onUploadError={(error: Error) => {
-    toast.error(`Error al subir: ${error.message}`);
+    toast.error(`Upload failed: ${error.message}`);
   }}
   content={{
     button({ ready }) {
-      return ready ? "Subir nueva foto" : "Cargando...";
+      return ready ? "Change photo" : "Uploading...";
     },
     allowedContent({ isUploading }) {
       return null;
     },
   }}
   className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
-/>        </div>
+/>
+        </div>
           </div>
         </CardContent>
       </Card>

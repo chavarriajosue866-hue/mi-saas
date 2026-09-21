@@ -3,83 +3,74 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@mi-saas/db";
 
-export async function PATCH(req: Request) {
-  console.log("🔍 [API PROFILE] Iniciando actualización de perfil...");
-
+// GET: Obtener datos del perfil
+export async function GET() {
   try {
-    // 1. Verificar sesión
     const session = await getServerSession(authOptions);
-    console.log("📋 [API PROFILE] Sesión obtenida:", JSON.stringify(session, null, 2));
-
     if (!session?.user) {
-      console.error("❌ [API PROFILE] No hay sesión de usuario");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = (session.user as any).id;
-    console.log(" [API PROFILE] User ID:", userId);
-
-    if (!userId) {
-      console.error("❌ [API PROFILE] User ID es undefined en la sesión");
-      return NextResponse.json({ error: "User ID no enwithtrado en sesión" }, { status: 400 });
-    }
-
-    // 2. Parsear el body
-    let body;
-    try {
-      body = await req.json();
-      console.log(" [API PROFILE] Body recibido:", JSON.stringify(body, null, 2));
-    } catch (parseError) {
-      console.error("❌ [API PROFILE] Error al parsear JSON:", parseError);
-      return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
-    }
-
-    // 3. Verificar que el usuario existe en la BD
-    const existingUser = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        businessName: true,
+        currency: true,
+        image: true,
+        role: true,
+      },
     });
-    console.log("👤 [API PROFILE] Usuario enwithtrado en BD:", existingUser?.email);
 
-    if (!existingUser) {
-      console.error(" [API PROFILE] User not found en BD with ID:", userId);
+    if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // 4. Update el usuario
-    console.log(" [API PROFILE] Actualizando usuario with datos:", {
-      name: body.name,
-      email: body.email,
-      image: body.image,
-    });
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error("Error fetching profile:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
+// PATCH: Actualizar datos del perfil (incluyendo la foto)
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { name, businessName, currency, image } = body;
+
+    console.log("📝 Updating profile with data:", { name, businessName, currency, image });
+
+    // Actualizar solo los campos que vienen en el request
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
+      where: { id: (session.user as any).id },
       data: {
-        name: body.name || existingUser.name,
-        email: body.email || existingUser.email,
-        image: body.image !== undefined ? body.image : existingUser.image,
+        ...(name !== undefined && { name }),
+        ...(businessName !== undefined && { businessName }),
+        ...(currency !== undefined && { currency }),
+        ...(image !== undefined && { image }),
       },
     });
 
-    console.log("✅ [API PROFILE] Usuario actualizado exitosamente:", updatedUser);
+    console.log("✅ Profile updated successfully:", updatedUser.email);
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        image: updatedUser.image,
-      },
+    return NextResponse.json({ 
+      user: updatedUser,
+      message: "Profile updated successfully"
     });
   } catch (error: any) {
-    console.error("💥 [API PROFILE] ERROR CRÍTICO:", error);
-    console.error("💥 [API PROFILE] Mensaje:", error.message);
-    console.error("💥 [API PROFILE] Stack:", error.stack);
-    
-    return NextResponse.json(
-      { error: error.message || "Error interno del servidor" },
-      { status: 500 }
-    );
+    console.error(" Error updating profile:", error);
+    console.error("Error details:", error.message);
+    return NextResponse.json({ 
+      error: "Failed to update profile",
+      details: error.message 
+    }, { status: 500 });
   }
 }
