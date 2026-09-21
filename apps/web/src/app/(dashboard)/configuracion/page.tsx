@@ -13,7 +13,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
-  const { data: session, status } = useSession();
+  const sessionHook = useSession();
+  const session = sessionHook?.data ?? null;
   const router = useRouter();
   
   const [formData, setFormData] = useState({
