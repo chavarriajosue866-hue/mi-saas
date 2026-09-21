@@ -19,6 +19,7 @@ export default function ConfiguracionPage() {
   
   const router = useRouter();
   const hasLoadedRef = useRef(false);
+  const [forcedLoad, setForcedLoad] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -35,47 +36,53 @@ export default function ConfiguracionPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Cargar datos del perfil con timeout de seguridad
+  // Timeout de emergencia - si después de 5 segundos sigue en loading, forzamos
   useEffect(() => {
-    if (status !== "authenticated" || hasLoadedRef.current) return;
-    
-    hasLoadedRef.current = true;
+    if (status === "loading") {
+      const timeout = setTimeout(() => {
+        console.warn("⚠️ Session loading timeout - forcing render");
+        setForcedLoad(true);
+      }, 5000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [status]);
 
-    const timeout = setTimeout(() => {
-      console.warn("️ Profile load timeout - showing form with empty data");
-      toast.error("Could not load profile. Please refresh.");
-    }, 8000);
+  // Cargar datos del perfil
+  useEffect(() => {
+    if ((status === "authenticated" || forcedLoad) && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
 
-    fetch("/api/user/profile")
-      .then(async (res) => {
-        if (res.status === 401) {
-          router.push("/login");
-          return;
-        }
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data?.user) {
-          setFormData({
-            name: data.user.name ?? "",
-            email: data.user.email ?? "",
-            businessName: data.user.businessName ?? "",
-            currency: data.user.currency ?? "USD",
-            image: data.user.image ?? "",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("❌ Error loading profile:", error);
-        toast.error("Failed to load profile data");
-      })
-      .finally(() => {
-        clearTimeout(timeout);
-      });
-  }, [status, router]);
+      fetch("/api/user/profile")
+        .then(async (res) => {
+          if (res.status === 401) {
+            router.push("/login");
+            return;
+          }
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((data) => {
+          if (data?.user) {
+            setFormData({
+              name: data.user.name ?? "",
+              email: data.user.email ?? "",
+              businessName: data.user.businessName ?? "",
+              currency: data.user.currency ?? "USD",
+              image: data.user.image ?? "",
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("❌ Error loading profile:", error);
+          toast.error("Could not load profile data");
+        });
+    } else if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, forcedLoad, router]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,32 +182,31 @@ export default function ConfiguracionPage() {
     }
   };
 
-  // ✅ Solo loading si la sesión está cargando (NO isLoadingData)
-  if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-          <p className="text-sm text-muted-foreground">Loading session...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Si no está autenticado
-  if (status === "unauthenticated") {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Not authenticated</p>
-          <Button onClick={() => router.push("/login")}>Go to Login</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Mostrar SIEMPRE el formulario (incluso si los datos no cargaron)
+if (status === "loading" && !forcedLoad) {
   return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
+        <p className="text-sm text-muted-foreground">Loading session...</p>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Si está unauthenticated después del timeout, redirigir
+if (status === "unauthenticated" && !forcedLoad) {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <p className="text-muted-foreground mb-4">Not authenticated</p>
+        <Button onClick={() => router.push("/login")}>Go to Login</Button>
+      </div>
+    </div>
+  );
+}
+
+// ✅ MOSTRAR SIEMPRE el formulario (incluso si los datos no cargaron)
+return (
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
