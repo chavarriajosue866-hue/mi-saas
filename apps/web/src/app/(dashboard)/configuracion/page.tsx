@@ -166,18 +166,38 @@ export default function ConfiguracionPage() {
               <p className="font-medium">Profile photo</p>
 <UploadButton
   endpoint="imageUploader"
-  onClientUploadComplete={(res) => {
+  onClientUploadComplete={async (res) => {
     if (res?.[0]?.url) {
-      setFormData({ ...formData, image: res[0].url });
-      toast.success("Photo uploaded successfully");
+      const newImageUrl = res[0].url;
+      
+      // 1. Actualizar el estado visual
+      setFormData({ ...formData, image: newImageUrl });
+      
+      // 2. ¡IMPORTANTE! Guardar en la base de datos
+      try {
+        const updateRes = await fetch("/api/user/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: newImageUrl }),
+        });
+
+        if (updateRes.ok) {
+          toast.success("Foto de perfil actualizada correctamente");
+        } else {
+          toast.error("Error al guardar la imagen en la base de datos");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Error de conexión al guardar la imagen");
+      }
     }
   }}
   onUploadError={(error: Error) => {
-    toast.error(`Upload failed: ${error.message}`);
+    toast.error(`Error al subir: ${error.message}`);
   }}
   content={{
     button({ ready }) {
-      return ready ? "Upload new photo" : "Loading...";
+      return ready ? "Subir nueva foto" : "Cargando...";
     },
     allowedContent({ isUploading }) {
       return null;
