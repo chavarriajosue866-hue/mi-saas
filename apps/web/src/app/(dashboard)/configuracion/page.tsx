@@ -266,7 +266,9 @@ export default function ConfiguracionPage() {
                 <UploadButton
                   endpoint="imageUploader"
                   onClientUploadComplete={handlePhotoUpload}
-                  onUploadError={(error) => toast.error(`Upload failed: ${error.message}`)}
+                  onUploadError={(error) => {
+  toast.error(`Upload failed: ${error.message}`);
+}}
                   content={{
                     button({ ready }) {
                       return ready ? "Upload new photo" : "Uploading...";
