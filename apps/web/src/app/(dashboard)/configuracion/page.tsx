@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UploadButton } from "@/lib/uploadthing";
-import { Loader2, User, Lock } from "lucide-react";
+import { Loader2, User, Lock, Building2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+
+// Tabs simples (puedes reemplazarlos con shadcn/ui tabs si los instalas)
+function Tabs({ tabs, activeTab, onTabChange }: { 
+  tabs: { id: string; label: string; icon?: any }[]; 
+  activeTab: string; 
+  onTabChange: (tab: string) => void;
+}) {
+  return (
+    <div className="border-b">
+      <div className="flex space-x-4">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {Icon && <Icon className="h-4 w-4" />}
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function ConfiguracionPage() {
   const sessionHook = useSession();
@@ -18,73 +49,69 @@ export default function ConfiguracionPage() {
   const status = sessionHook?.status ?? "loading";
   
   const router = useRouter();
-  const hasLoadedRef = useRef(false);
-  const [forcedLoad, setForcedLoad] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [isLoading, setIsLoading] = useState(true);
   
-  const [formData, setFormData] = useState({
+  const [profileData, setProfileData] = useState({
     name: "",
     email: "",
-    businessName: "",
-    currency: "USD",
     image: "",
   });
+  
+  const [businessData, setBusinessData] = useState({
+    businessName: "",
+    taxId: "",
+    currency: "USD",
+    timezone: "UTC",
+  });
+  
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+  
   const [isSaving, setIsSaving] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  // Timeout de emergencia - si después de 5 segundos sigue en loading, forzamos
   useEffect(() => {
-    if (status === "loading") {
-      const timeout = setTimeout(() => {
-        console.warn("⚠️ Session loading timeout - forcing render");
-        setForcedLoad(true);
-      }, 5000);
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [status]);
-
-  // Cargar datos del perfil
-  useEffect(() => {
-    if ((status === "authenticated" || forcedLoad) && !hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-
+    if (status === "authenticated") {
       fetch("/api/user/profile")
         .then(async (res) => {
           if (res.status === 401) {
             router.push("/login");
             return;
           }
-          if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-          }
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
         })
         .then((data) => {
           if (data?.user) {
-            setFormData({
+            setProfileData({
               name: data.user.name ?? "",
               email: data.user.email ?? "",
-              businessName: data.user.businessName ?? "",
-              currency: data.user.currency ?? "USD",
               image: data.user.image ?? "",
+            });
+            setBusinessData({
+              businessName: data.user.businessName ?? "",
+              taxId: data.user.taxId ?? "",
+              currency: data.user.currency ?? "USD",
+              timezone: data.user.timezone ?? "UTC",
             });
           }
         })
         .catch((error) => {
-          console.error("❌ Error loading profile:", error);
-          toast.error("Could not load profile data");
+          console.error("Error loading profile:", error);
+          toast.error("Failed to load profile data");
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
     } else if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [status, forcedLoad, router]);
+  }, [status, router]);
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
 
@@ -93,21 +120,45 @@ export default function ConfiguracionPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: formData.name,
-          businessName: formData.businessName,
-          currency: formData.currency,
+          name: profileData.name,
         }),
       });
 
       if (res.ok) {
-        toast.success("Changes saved successfully!");
+        toast.success("Profile updated successfully!");
       } else {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to save");
+        throw new Error("Failed to save");
       }
-    } catch (error: any) {
-      console.error("Save error:", error);
-      toast.error(error.message || "Error saving changes");
+    } catch (error) {
+      toast.error("Error saving changes");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBusinessSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: businessData.businessName,
+          currency: businessData.currency,
+          timezone: businessData.timezone,
+          taxId: businessData.taxId,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Business settings updated!");
+      } else {
+        throw new Error("Failed to save");
+      }
+    } catch (error) {
+      toast.error("Error saving business settings");
     } finally {
       setIsSaving(false);
     }
@@ -116,40 +167,28 @@ export default function ConfiguracionPage() {
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
-      setFormData((prev) => ({ ...prev, image: imageUrl }));
+      setProfileData((prev) => ({ ...prev, image: imageUrl }));
       
       try {
-        const response = await fetch("/api/user/profile", {
+        await fetch("/api/user/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: imageUrl }),
         });
-
-        if (response.ok) {
-          toast.success("Profile photo updated!");
-        } else {
-          throw new Error("Failed to save photo");
-        }
+        toast.success("Profile photo updated!");
       } catch (error) {
-        console.error("Photo save error:", error);
-        toast.error("Error saving photo to database");
+        toast.error("Error saving photo");
       }
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsChangingPassword(true);
+    setIsSaving(true);
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error("New passwords do not match");
-      setIsChangingPassword(false);
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      setIsChangingPassword(false);
+      setIsSaving(false);
       return;
     }
 
@@ -165,216 +204,256 @@ export default function ConfiguracionPage() {
 
       if (res.ok) {
         toast.success("Password changed successfully!");
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
+        setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       } else {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to change password");
+        throw new Error("Failed to change password");
       }
     } catch (error: any) {
-      console.error("Password change error:", error);
       toast.error(error.message || "Error changing password");
     } finally {
-      setIsChangingPassword(false);
+      setIsSaving(false);
     }
   };
 
-if (status === "loading" && !forcedLoad) {
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-        <p className="text-sm text-muted-foreground">Loading session...</p>
+  if (status === "loading" || isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// ✅ Si está unauthenticated después del timeout, redirigir
-if (status === "unauthenticated" && !forcedLoad) {
+  const tabs = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "business", label: "Business", icon: Building2 },
+    { id: "security", label: "Security", icon: Lock },
+  ];
+
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-center">
-        <p className="text-muted-foreground mb-4">Not authenticated</p>
-        <Button onClick={() => router.push("/login")}>Go to Login</Button>
-      </div>
-    </div>
-  );
-}
-
-// ✅ MOSTRAR SIEMPRE el formulario (incluso si los datos no cargaron)
-return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and business settings</p>
+        <p className="text-muted-foreground">
+          Manage your profile, business, and account preferences
+        </p>
       </div>
 
-      {/* Profile Photo */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Photo</CardTitle>
-          <CardDescription>Update your profile picture</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              {formData.image ? (
-                <AvatarImage src={formData.image} alt={formData.name} />
-              ) : (
-                <AvatarFallback>
-                  <User className="h-8 w-8" />
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium">Profile photo</p>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={handlePhotoUpload}
-                onUploadError={(error) => {
-                  toast.error(`Upload failed: ${error.message}`);
-                }}
-                content={{
-                  button({ ready }) {
-                    return ready ? "Change photo" : "Uploading...";
-                  },
-                  allowedContent: () => null,
-                }}
-                className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
-              />
-              <p className="text-xs text-muted-foreground mt-1">Image (2MB max)</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Profile Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Update your personal details</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSave}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="John Doe"
-              />
+      {/* PROFILE TAB */}
+      {activeTab === "profile" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Personal Profile
+            </CardTitle>
+            <CardDescription>Update your personal information</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-6">
+              <Avatar className="h-20 w-20">
+                {profileData.image ? (
+                  <AvatarImage src={profileData.image} alt={profileData.name} />
+                ) : (
+                  <AvatarFallback>
+                    <User className="h-8 w-8" />
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">Profile photo</p>
+                <UploadButton
+                  endpoint="imageUploader"
+                  onClientUploadComplete={handlePhotoUpload}
+                  onUploadError={(error) => toast.error(`Upload failed: ${error.message}`)}
+                  content={{
+                    button({ ready }) {
+                      return ready ? "Upload new photo" : "Uploading...";
+                    },
+                    allowedContent: () => null,
+                  }}
+                  className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Image (2MB)</p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                disabled
-                className="bg-muted cursor-not-allowed"
-              />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-            </div>
+            <form onSubmit={handleProfileSave} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input
-                id="businessName"
-                value={formData.businessName}
-                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                placeholder="My Business"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profileData.email}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Input
-                id="currency"
-                value={formData.currency}
-                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                placeholder="USD"
-              />
-            </div>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save changes"
+                )}
+              </Button>
+            </form>
           </CardContent>
-          <div className="p-6 pt-0">
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </div>
-        </form>
-      </Card>
+        </Card>
+      )}
 
-      {/* Change Password */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            Change Password
-          </CardTitle>
-          <CardDescription>Update your password securely</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleChangePassword}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                placeholder="Enter current password"
-              />
-            </div>
+      {/* BUSINESS TAB */}
+      {activeTab === "business" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Business Settings
+            </CardTitle>
+            <CardDescription>Business information and preferences</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleBusinessSave} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="businessName">Business Name</Label>
+                <Input
+                  id="businessName"
+                  value={businessData.businessName}
+                  onChange={(e) => setBusinessData({ ...businessData, businessName: e.target.value })}
+                  placeholder="My Company Inc."
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                placeholder="Enter new password"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="taxId">Tax ID / Business Registration</Label>
+                <Input
+                  id="taxId"
+                  value={businessData.taxId}
+                  onChange={(e) => setBusinessData({ ...businessData, taxId: e.target.value })}
+                  placeholder="12-3456789-0"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                placeholder="Confirm new password"
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency</Label>
+                  <select
+                    id="currency"
+                    value={businessData.currency}
+                    onChange={(e) => setBusinessData({ ...businessData, currency: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - British Pound</option>
+                    <option value="MXN">MXN - Mexican Peso</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timezone">Timezone</Label>
+                  <select
+                    id="timezone"
+                    value={businessData.timezone}
+                    onChange={(e) => setBusinessData({ ...businessData, timezone: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  >
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">New York (EST)</option>
+                    <option value="America/Los_Angeles">Los Angeles (PST)</option>
+                    <option value="Europe/Madrid">Spain (GMT+1)</option>
+                    <option value="America/Mexico_City">Mexico City (CST)</option>
+                  </select>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save settings"
+                )}
+              </Button>
+            </form>
           </CardContent>
-          <div className="p-6 pt-0">
-            <Button type="submit" disabled={isChangingPassword} variant="secondary">
-              {isChangingPassword ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Changing...
-                </>
-              ) : (
-                "Change Password"
-              )}
-            </Button>
-          </div>
-        </form>
-      </Card>
+        </Card>
+      )}
+
+      {/* SECURITY TAB */}
+      {activeTab === "security" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Security
+            </CardTitle>
+            <CardDescription>Change your password</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">New password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm new password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                />
+              </div>
+
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Changing...
+                  </>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Change password
+                  </span>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
