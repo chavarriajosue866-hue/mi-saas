@@ -13,8 +13,11 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
+  // ✅ PATRÓN DEFENSIVO - Siempre usar este formato
   const sessionHook = useSession();
   const session = sessionHook?.data ?? null;
+  const status = sessionHook?.status ?? "loading";
+  
   const router = useRouter();
   
   const [formData, setFormData] = useState({
@@ -38,7 +41,7 @@ export default function ConfiguracionPage() {
     if (status === "authenticated") {
       const loadProfile = async () => {
         try {
-          console.log(" Loading profile data...");
+          console.log("🔄 Loading profile data...");
           const res = await fetch("/api/user/profile");
           
           if (!res.ok) {
@@ -50,7 +53,7 @@ export default function ConfiguracionPage() {
           }
 
           const data = await res.json();
-          console.log("📊 Profile data received:", data);
+          console.log(" Profile data received:", data);
           
           if (data.user) {
             setFormData({
@@ -107,7 +110,7 @@ export default function ConfiguracionPage() {
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
-      console.log("📸 Photo uploaded:", imageUrl);
+      console.log(" Photo uploaded:", imageUrl);
       
       setFormData((prev) => ({ ...prev, image: imageUrl }));
       
@@ -175,6 +178,7 @@ export default function ConfiguracionPage() {
     }
   };
 
+  // ✅ Solo mostrar loading si la sesión está cargando
   if (status === "loading" || isLoadingData) {
     return (
       <div className="flex items-center justify-center h-screen">
