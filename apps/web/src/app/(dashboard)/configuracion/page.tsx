@@ -13,13 +13,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
-  const sessionHook = useSession();
-  const session = sessionHook?.data ?? null;
-  const status = sessionHook?.status ?? "loading";
+  const { data: session, status } = useSession();
   const router = useRouter();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,41 +23,36 @@ export default function ConfiguracionPage() {
     currency: "USD",
     image: "",
   });
+  const [isSaving, setIsSaving] = useState(false);
 
+  // Cargar datos cuando la sesión esté lista
   useEffect(() => {
-    // Solo cargar si está autenticado
-    if (status !== "authenticated") return;
-
-    const loadData = async () => {
-      try {
-        const res = await fetch("/api/user/profile");
-        
-        if (!res.ok) {
+    if (status === "authenticated") {
+      fetch("/api/user/profile")
+        .then(async (res) => {
           if (res.status === 401) {
             router.push("/login");
             return;
           }
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        
-        setFormData({
-          name: data.user?.name ?? "",
-          email: data.user?.email ?? "",
-          businessName: data.user?.businessName ?? "",
-          currency: data.user?.currency ?? "USD",
-          image: data.user?.image ?? "",
+          if (!res.ok) throw new Error("Failed to load");
+          const data = await res.json();
+          if (data?.user) {
+            setFormData({
+              name: data.user.name ?? "",
+              email: data.user.email ?? "",
+              businessName: data.user.businessName ?? "",
+              currency: data.user.currency ?? "USD",
+              image: data.user.image ?? "",
+            });
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading profile:", err);
+          toast.error("Could not load profile data");
         });
-      } catch (error) {
-        console.error("Error loading profile:", error);
-        toast.error("Failed to load profile data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
+    } else if (status === "unauthenticated") {
+      router.push("/login");
+    }
   }, [status, router]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -82,11 +73,10 @@ export default function ConfiguracionPage() {
       if (res.ok) {
         toast.success("Changes saved!");
       } else {
-        throw new Error("Failed to save");
+        toast.error("Failed to save");
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Error saving changes");
+    } catch {
+      toast.error("Connection error");
     } finally {
       setIsSaving(false);
     }
@@ -104,36 +94,22 @@ export default function ConfiguracionPage() {
           body: JSON.stringify({ image: imageUrl }),
         });
         toast.success("Photo updated!");
-      } catch (error) {
+      } catch {
         toast.error("Error saving photo");
       }
     }
   };
 
-  // Loading state - con timeout de seguridad
-  if (status === "loading" || isLoading) {
+  // Solo mostrar loading si la sesión está cargando
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Si no está autenticado después de cargar
-  if (status === "unauthenticated") {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">Not authenticated</p>
-          <Button onClick={() => router.push("/login")}>Go to Login</Button>
-        </div>
-      </div>
-    );
-  }
-
+  // Mostrar el formulario SIEMPRE (incluso si los datos no han cargado aún)
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -159,9 +135,7 @@ export default function ConfiguracionPage() {
               <UploadButton
                 endpoint="imageUploader"
                 onClientUploadComplete={handlePhotoUpload}
-                onUploadError={(error) => {
-                  toast.error(`Upload failed: ${error.message}`);
-                }}
+                onUploadError={(error) => toast.error(`Error: ${error.message}`)}
                 content={{
                   button({ ready }) {
                     return ready ? "Change photo" : "Uploading...";
@@ -189,14 +163,12 @@ export default function ConfiguracionPage() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="John Doe"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" value={formData.email} disabled className="bg-muted" />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
 
             <div className="space-y-2">
@@ -205,7 +177,6 @@ export default function ConfiguracionPage() {
                 id="businessName"
                 value={formData.businessName}
                 onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                placeholder="My Business"
               />
             </div>
 
@@ -215,7 +186,6 @@ export default function ConfiguracionPage() {
                 id="currency"
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                placeholder="USD"
               />
             </div>
           </CardContent>
