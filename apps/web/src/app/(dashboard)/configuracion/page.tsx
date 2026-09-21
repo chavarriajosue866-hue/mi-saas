@@ -44,7 +44,6 @@ function Tabs({ tabs, activeTab, onTabChange }: {
 }
 
 export default function ConfiguracionPage() {
-  // ✅ PATRÓN DEFENSIVO - Siempre usar este formato
   const sessionHook = useSession();
   const session = sessionHook?.data ?? null;
   const status = sessionHook?.status ?? "loading";
@@ -55,6 +54,7 @@ export default function ConfiguracionPage() {
   
   const [activeTab, setActiveTab] = useState("profile");
   const [isSaving, setIsSaving] = useState(false);
+  const [userRole, setUserRole] = useState<string>("user");
   
   const [profileData, setProfileData] = useState({
     name: "",
@@ -75,11 +75,11 @@ export default function ConfiguracionPage() {
     confirmPassword: "",
   });
 
-  // ⏰ TIMEOUT DE EMERGENCIA - Si después de 5 segundos sigue en loading, forzamos
+  // ⏰ TIMEOUT DE EMERGENCIA
   useEffect(() => {
     if (status === "loading") {
       const timeout = setTimeout(() => {
-        console.warn("⚠️ Session loading timeout - forcing render");
+        console.warn("️ Session loading timeout - forcing render");
         setForcedLoad(true);
       }, 5000);
       
@@ -119,10 +119,11 @@ export default function ConfiguracionPage() {
               currency: data.user.currency ?? "USD",
               timezone: data.user.timezone ?? "UTC",
             });
+            setUserRole(data.user.role ?? "user"); // Guardar el rol del usuario
           }
         })
         .catch((error) => {
-          console.error("❌ Error loading profile:", error);
+          console.error(" Error loading profile:", error);
           toast.error("Could not load profile data");
         });
     } else if (status === "unauthenticated") {
@@ -258,13 +259,18 @@ export default function ConfiguracionPage() {
     );
   }
 
-  const tabs = [
+  // Tabs - Filtrados según el rol
+  const allTabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "business", label: "Business", icon: Building2 },
     { id: "security", label: "Security", icon: Lock },
   ];
 
-  // ✅ MOSTRAR SIEMPRE el contenido (incluso si los datos no cargaron)
+  // Solo los admins ven la pestaña Business
+  const visibleTabs = userRole === "admin" 
+    ? allTabs 
+    : allTabs.filter(tab => tab.id !== "business");
+
   return (
     <div className="space-y-6">
       <div>
@@ -274,7 +280,7 @@ export default function ConfiguracionPage() {
         </p>
       </div>
 
-      <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+      <Tabs tabs={visibleTabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* PROFILE TAB */}
       {activeTab === "profile" && (
@@ -353,8 +359,8 @@ export default function ConfiguracionPage() {
         </Card>
       )}
 
-      {/* BUSINESS TAB */}
-      {activeTab === "business" && (
+      {/* BUSINESS TAB - Solo visible para admins */}
+      {activeTab === "business" && userRole === "admin" && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
