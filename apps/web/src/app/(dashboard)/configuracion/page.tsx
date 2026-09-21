@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,12 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
-  // ✅ PATRÓN DEFENSIVO - Siempre usar este formato
   const sessionHook = useSession();
   const session = sessionHook?.data ?? null;
   const status = sessionHook?.status ?? "loading";
   
   const router = useRouter();
+  const hasLoadedRef = useRef(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -34,48 +34,47 @@ export default function ConfiguracionPage() {
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Cargar datos del perfil
+  // Cargar datos del perfil con timeout de seguridad
   useEffect(() => {
-    if (status === "authenticated") {
-      const loadProfile = async () => {
-        try {
-          console.log("🔄 Loading profile data...");
-          const res = await fetch("/api/user/profile");
-          
-          if (!res.ok) {
-            if (res.status === 401) {
-              router.push("/login");
-              return;
-            }
-            throw new Error(`HTTP ${res.status}`);
-          }
+    if (status !== "authenticated" || hasLoadedRef.current) return;
+    
+    hasLoadedRef.current = true;
 
-          const data = await res.json();
-          console.log(" Profile data received:", data);
-          
-          if (data.user) {
-            setFormData({
-              name: data.user.name ?? "",
-              email: data.user.email ?? "",
-              businessName: data.user.businessName ?? "",
-              currency: data.user.currency ?? "USD",
-              image: data.user.image ?? "",
-            });
-          }
-        } catch (error) {
-          console.error("❌ Error loading profile:", error);
-          toast.error("Failed to load profile data");
-        } finally {
-          setIsLoadingData(false);
+    const timeout = setTimeout(() => {
+      console.warn("️ Profile load timeout - showing form with empty data");
+      toast.error("Could not load profile. Please refresh.");
+    }, 8000);
+
+    fetch("/api/user/profile")
+      .then(async (res) => {
+        if (res.status === 401) {
+          router.push("/login");
+          return;
         }
-      };
-
-      loadProfile();
-    } else if (status === "unauthenticated") {
-      router.push("/login");
-    }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        if (data?.user) {
+          setFormData({
+            name: data.user.name ?? "",
+            email: data.user.email ?? "",
+            businessName: data.user.businessName ?? "",
+            currency: data.user.currency ?? "USD",
+            image: data.user.image ?? "",
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error loading profile:", error);
+        toast.error("Failed to load profile data");
+      })
+      .finally(() => {
+        clearTimeout(timeout);
+      });
   }, [status, router]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -110,8 +109,6 @@ export default function ConfiguracionPage() {
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
-      console.log(" Photo uploaded:", imageUrl);
-      
       setFormData((prev) => ({ ...prev, image: imageUrl }));
       
       try {
@@ -178,18 +175,31 @@ export default function ConfiguracionPage() {
     }
   };
 
-  // ✅ Solo mostrar loading si la sesión está cargando
-  if (status === "loading" || isLoadingData) {
+  // ✅ Solo loading si la sesión está cargando (NO isLoadingData)
+  if (status === "loading") {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
-          <p className="text-sm text-muted-foreground">Loading profile...</p>
+          <p className="text-sm text-muted-foreground">Loading session...</p>
         </div>
       </div>
     );
   }
 
+  // ✅ Si no está autenticado
+  if (status === "unauthenticated") {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Not authenticated</p>
+          <Button onClick={() => router.push("/login")}>Go to Login</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Mostrar SIEMPRE el formulario (incluso si los datos no cargaron)
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -263,9 +273,7 @@ export default function ConfiguracionPage() {
                 disabled
                 className="bg-muted cursor-not-allowed"
               />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed
-              </p>
+              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
             </div>
 
             <div className="space-y-2">
@@ -303,7 +311,7 @@ export default function ConfiguracionPage() {
         </form>
       </Card>
 
-      {/* Change Password Section */}
+      {/* Change Password */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
