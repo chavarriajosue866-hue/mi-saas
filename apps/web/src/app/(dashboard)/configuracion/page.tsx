@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UploadButton } from "@/lib/uploadthing";
-import { Loader2, User, Lock, Building2, CreditCard } from "lucide-react";
+import { Loader2, User, Lock, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-// Tabs simples (puedes reemplazarlos con shadcn/ui tabs si los instalas)
+// Componente Tabs simple
 function Tabs({ tabs, activeTab, onTabChange }: { 
   tabs: { id: string; label: string; icon?: any }[]; 
   activeTab: string; 
@@ -44,13 +44,17 @@ function Tabs({ tabs, activeTab, onTabChange }: {
 }
 
 export default function ConfiguracionPage() {
+  // ✅ PATRÓN DEFENSIVO - Siempre usar este formato
   const sessionHook = useSession();
   const session = sessionHook?.data ?? null;
   const status = sessionHook?.status ?? "loading";
   
   const router = useRouter();
+  const hasLoadedRef = useRef(false);
+  const [forcedLoad, setForcedLoad] = useState(false);
+  
   const [activeTab, setActiveTab] = useState("profile");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
   const [profileData, setProfileData] = useState({
     name: "",
@@ -70,21 +74,39 @@ export default function ConfiguracionPage() {
     newPassword: "",
     confirmPassword: "",
   });
-  
-  const [isSaving, setIsSaving] = useState(false);
 
+  // ⏰ TIMEOUT DE EMERGENCIA - Si después de 5 segundos sigue en loading, forzamos
   useEffect(() => {
-    if (status === "authenticated") {
+    if (status === "loading") {
+      const timeout = setTimeout(() => {
+        console.warn("⚠️ Session loading timeout - forcing render");
+        setForcedLoad(true);
+      }, 5000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [status]);
+
+  // Cargar datos del perfil
+  useEffect(() => {
+    if ((status === "authenticated" || forcedLoad) && !hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+
+      console.log("🔄 Loading profile data...");
+      
       fetch("/api/user/profile")
         .then(async (res) => {
           if (res.status === 401) {
             router.push("/login");
             return;
           }
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
           return res.json();
         })
         .then((data) => {
+          console.log("📊 Profile data loaded:", data);
           if (data?.user) {
             setProfileData({
               name: data.user.name ?? "",
@@ -100,16 +122,13 @@ export default function ConfiguracionPage() {
           }
         })
         .catch((error) => {
-          console.error("Error loading profile:", error);
-          toast.error("Failed to load profile data");
-        })
-        .finally(() => {
-          setIsLoading(false);
+          console.error("❌ Error loading profile:", error);
+          toast.error("Could not load profile data");
         });
     } else if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [status, router]);
+  }, [status, forcedLoad, router]);
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,10 +234,26 @@ export default function ConfiguracionPage() {
     }
   };
 
-  if (status === "loading" || isLoading) {
+  // ✅ Solo mostrar loading si realmente está cargando Y no ha pasado el timeout
+  if (status === "loading" && !forcedLoad) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
+          <p className="text-sm text-muted-foreground">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ Si está unauthenticated después del timeout, redirigir
+  if (status === "unauthenticated" && !forcedLoad) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">Not authenticated</p>
+          <Button onClick={() => router.push("/login")}>Go to Login</Button>
+        </div>
       </div>
     );
   }
@@ -229,6 +264,7 @@ export default function ConfiguracionPage() {
     { id: "security", label: "Security", icon: Lock },
   ];
 
+  // ✅ MOSTRAR SIEMPRE el contenido (incluso si los datos no cargaron)
   return (
     <div className="space-y-6">
       <div>
@@ -267,8 +303,8 @@ export default function ConfiguracionPage() {
                   endpoint="imageUploader"
                   onClientUploadComplete={handlePhotoUpload}
                   onUploadError={(error) => {
-  toast.error(`Upload failed: ${error.message}`);
-}}
+                    toast.error(`Upload failed: ${error.message}`);
+                  }}
                   content={{
                     button({ ready }) {
                       return ready ? "Upload new photo" : "Uploading...";
