@@ -8,13 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UploadButton } from "@/lib/uploadthing";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export default function ConfiguracionPage() {
-  const sessionHook = useSession();
-  const session = sessionHook?.data ?? null;
+  const { data: session, status } = useSession();
   const router = useRouter();
   
   const [formData, setFormData] = useState({
@@ -24,20 +23,35 @@ export default function ConfiguracionPage() {
     currency: "USD",
     image: "",
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [isSaving, setIsSaving] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  // Cargar datos cuando la sesión esté lista
+  // Cargar datos del perfil
   useEffect(() => {
     if (status === "authenticated") {
-      fetch("/api/user/profile")
-        .then(async (res) => {
-          if (res.status === 401) {
-            router.push("/login");
-            return;
+      const loadProfile = async () => {
+        try {
+          console.log(" Loading profile data...");
+          const res = await fetch("/api/user/profile");
+          
+          if (!res.ok) {
+            if (res.status === 401) {
+              router.push("/login");
+              return;
+            }
+            throw new Error(`HTTP ${res.status}`);
           }
-          if (!res.ok) throw new Error("Failed to load");
+
           const data = await res.json();
-          if (data?.user) {
+          console.log("📊 Profile data received:", data);
+          
+          if (data.user) {
             setFormData({
               name: data.user.name ?? "",
               email: data.user.email ?? "",
@@ -46,11 +60,15 @@ export default function ConfiguracionPage() {
               image: data.user.image ?? "",
             });
           }
-        })
-        .catch((err) => {
-          console.error("Error loading profile:", err);
-          toast.error("Could not load profile data");
-        });
+        } catch (error) {
+          console.error("❌ Error loading profile:", error);
+          toast.error("Failed to load profile data");
+        } finally {
+          setIsLoadingData(false);
+        }
+      };
+
+      loadProfile();
     } else if (status === "unauthenticated") {
       router.push("/login");
     }
@@ -72,12 +90,14 @@ export default function ConfiguracionPage() {
       });
 
       if (res.ok) {
-        toast.success("Changes saved!");
+        toast.success("Changes saved successfully!");
       } else {
-        toast.error("Failed to save");
+        const error = await res.json();
+        throw new Error(error.message || "Failed to save");
       }
-    } catch {
-      toast.error("Connection error");
+    } catch (error: any) {
+      console.error("Save error:", error);
+      toast.error(error.message || "Error saving changes");
     } finally {
       setIsSaving(false);
     }
@@ -86,31 +106,85 @@ export default function ConfiguracionPage() {
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
+      console.log("📸 Photo uploaded:", imageUrl);
+      
       setFormData((prev) => ({ ...prev, image: imageUrl }));
       
       try {
-        await fetch("/api/user/profile", {
+        const response = await fetch("/api/user/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: imageUrl }),
         });
-        toast.success("Photo updated!");
-      } catch {
-        toast.error("Error saving photo");
+
+        if (response.ok) {
+          toast.success("Profile photo updated!");
+        } else {
+          throw new Error("Failed to save photo");
+        }
+      } catch (error) {
+        console.error("Photo save error:", error);
+        toast.error("Error saving photo to database");
       }
     }
   };
 
-  // Solo mostrar loading si la sesión está cargando
-  if (status === "loading") {
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsChangingPassword(true);
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("New passwords do not match");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      setIsChangingPassword(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/user/password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      if (res.ok) {
+        toast.success("Password changed successfully!");
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to change password");
+      }
+    } catch (error: any) {
+      console.error("Password change error:", error);
+      toast.error(error.message || "Error changing password");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  if (status === "loading" || isLoadingData) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-2" />
+          <p className="text-sm text-muted-foreground">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
-  // Mostrar el formulario SIEMPRE (incluso si los datos no han cargado aún)
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -118,6 +192,7 @@ export default function ConfiguracionPage() {
         <p className="text-muted-foreground">Manage your account and business settings</p>
       </div>
 
+      {/* Profile Photo */}
       <Card>
         <CardHeader>
           <CardTitle>Profile Photo</CardTitle>
@@ -126,33 +201,37 @@ export default function ConfiguracionPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={formData.image || undefined} />
-              <AvatarFallback>
-                <User className="h-8 w-8" />
-              </AvatarFallback>
+              {formData.image ? (
+                <AvatarImage src={formData.image} alt={formData.name} />
+              ) : (
+                <AvatarFallback>
+                  <User className="h-8 w-8" />
+                </AvatarFallback>
+              )}
             </Avatar>
             <div>
               <p className="text-sm font-medium">Profile photo</p>
-<UploadButton
-  endpoint="imageUploader"
-  onClientUploadComplete={handlePhotoUpload}
-  onUploadError={(error) => {
-    toast.error(`Upload failed: ${error.message}`);
-  }}
-  content={{
-    button({ ready }) {
-      return ready ? "Change photo" : "Uploading...";
-    },
-    allowedContent: () => null,
-  }}
-  className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
-/>
-              <p className="text-xs text-muted-foreground mt-1">Image (2MB)</p>
+              <UploadButton
+                endpoint="imageUploader"
+                onClientUploadComplete={handlePhotoUpload}
+                onUploadError={(error) => {
+                  toast.error(`Upload failed: ${error.message}`);
+                }}
+                content={{
+                  button({ ready }) {
+                    return ready ? "Change photo" : "Uploading...";
+                  },
+                  allowedContent: () => null,
+                }}
+                className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Image (2MB max)</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Profile Information */}
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
@@ -166,12 +245,22 @@ export default function ConfiguracionPage() {
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="John Doe"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={formData.email} disabled className="bg-muted" />
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                disabled
+                className="bg-muted cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground">
+                Email cannot be changed
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -180,6 +269,7 @@ export default function ConfiguracionPage() {
                 id="businessName"
                 value={formData.businessName}
                 onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                placeholder="My Business"
               />
             </div>
 
@@ -189,6 +279,7 @@ export default function ConfiguracionPage() {
                 id="currency"
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                placeholder="USD"
               />
             </div>
           </CardContent>
@@ -201,6 +292,65 @@ export default function ConfiguracionPage() {
                 </>
               ) : (
                 "Save Changes"
+              )}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      {/* Change Password Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Change Password
+          </CardTitle>
+          <CardDescription>Update your password securely</CardDescription>
+        </CardHeader>
+        <form onSubmit={handleChangePassword}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                placeholder="Enter current password"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                placeholder="Enter new password"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                placeholder="Confirm new password"
+              />
+            </div>
+          </CardContent>
+          <div className="p-6 pt-0">
+            <Button type="submit" disabled={isChangingPassword} variant="secondary">
+              {isChangingPassword ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Changing...
+                </>
+              ) : (
+                "Change Password"
               )}
             </Button>
           </div>
