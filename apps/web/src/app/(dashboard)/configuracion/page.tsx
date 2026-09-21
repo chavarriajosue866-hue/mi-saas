@@ -25,7 +25,6 @@ export default function ConfiguracionPage() {
     image: "",
   });
 
-  // CARGAR DATOS DEL USUARIO
   useEffect(() => {
     async function loadUserData() {
       try {
@@ -57,14 +56,17 @@ export default function ConfiguracionPage() {
       }
     }
 
-    if (sessionHook.status === "authenticated") {
+    // ✅ FIX: Usar optional chaining para evitar "Cannot read properties of undefined"
+    const status = sessionHook?.status;
+    
+    if (status === "authenticated") {
       loadUserData();
-    } else if (sessionHook.status === "unauthenticated") {
+    } else if (status === "unauthenticated") {
       router.push("/login");
     }
-  }, [sessionHook.status, router]);
+    // Si status es "loading" o undefined, esperamos al siguiente render
+  }, [sessionHook?.status, router]);
 
-  // GUARDAR CAMBIOS
   const handleSaveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -93,11 +95,9 @@ export default function ConfiguracionPage() {
     }
   };
 
-  // ACTUALIZAR FOTO DE PERFIL
   const handlePhotoUpload = async (res: any) => {
     if (res?.[0]?.url) {
       const imageUrl = res[0].url;
-      
       setFormData({ ...formData, image: imageUrl });
       
       try {
@@ -119,7 +119,8 @@ export default function ConfiguracionPage() {
     }
   };
 
-  if (loading) {
+  // ✅ FIX: Usar optional chaining aquí también
+  if (sessionHook?.status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -139,7 +140,6 @@ export default function ConfiguracionPage() {
         </p>
       </div>
 
-      {/* Profile Photo */}
       <Card>
         <CardHeader>
           <CardTitle>Profile Photo</CardTitle>
@@ -179,7 +179,6 @@ export default function ConfiguracionPage() {
         </CardContent>
       </Card>
 
-      {/* Profile Information */}
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
