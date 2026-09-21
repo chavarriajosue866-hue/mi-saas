@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,7 +108,7 @@ export default function RegisterPage() {
               </p>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -125,7 +125,7 @@ export default function RegisterPage() {
                 Sign in here
               </Link>
             </p>
-          </CardFooter>
+          </div>
         </form>
       </Card>
     </div>
