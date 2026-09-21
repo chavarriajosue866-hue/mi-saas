@@ -107,17 +107,38 @@ export default function ConfiguracionPage() {
     }
   };
 
-  if (sessionHook?.status === "loading") {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+// Solo mostrar loading si realmente está cargando
+if (sessionHook?.status === "loading") {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <span className="ml-2">Loading...</span>
+    </div>
+  );
+}
 
-  if (!session) {
-    return <div>Not authenticated</div>;
-  }
+// Si no hay sesión después de cargar, redirigir o mostrar mensaje más amigable
+if (!session && sessionHook?.status === "unauthenticated") {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="text-center">
+        <p className="text-muted-foreground mb-4">Session expired or not authenticated</p>
+        <Button onClick={() => window.location.href = "/login"}>
+          Go to Login
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Si llegamos aquí pero session es null, esperar un poco más (caso edge)
+if (!session) {
+  return (
+    <div className="flex items-center justify-center h-screen">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
   return (
     <div className="space-y-6">
