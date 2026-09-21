@@ -132,18 +132,20 @@ export default function ConfiguracionPage() {
             </Avatar>
             <div>
               <p className="text-sm font-medium">Profile photo</p>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={handlePhotoUpload}
-                onUploadError={(error) => toast.error(`Error: ${error.message}`)}
-                content={{
-                  button({ ready }) {
-                    return ready ? "Change photo" : "Uploading...";
-                  },
-                  allowedContent: () => null,
-                }}
-                className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
-              />
+<UploadButton
+  endpoint="imageUploader"
+  onClientUploadComplete={handlePhotoUpload}
+  onUploadError={(error) => {
+    toast.error(`Upload failed: ${error.message}`);
+  }}
+  content={{
+    button({ ready }) {
+      return ready ? "Change photo" : "Uploading...";
+    },
+    allowedContent: () => null,
+  }}
+  className="ut-button:bg-primary ut-button:text-primary-foreground ut-button:hover:bg-primary/90"
+/>
               <p className="text-xs text-muted-foreground mt-1">Image (2MB)</p>
             </div>
           </div>
