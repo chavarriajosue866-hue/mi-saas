@@ -16,7 +16,7 @@ const sidebarLinks = [
   { href: "/agenda", icon: Calendar, label: "Schedule" },
   { href: "/clientes", icon: Users, label: "Clients" },
   { href: "/facturas", icon: FileText, label: "Invoices" },
-  { href: "/proyectos", icon: FolderKanban, label: "Projects" },
+  { href: "/projects", icon: FolderOpen, label: "Projects" },  // ← Usa esta línea
   { href: "/equipo", icon: Users, label: "Team" },
   { href: "/configuracion", icon: Settings, label: "Settings" },
 ];
