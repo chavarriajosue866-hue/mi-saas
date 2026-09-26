@@ -28,9 +28,11 @@ model User {
   clients      Client[]
   appointments Appointment[]
   invoices     Invoice[]
-  projects     Project[]
   sentInvitations Invitation[] @relation("invitedBy")
+  ownedProjects      Project[]         @relation("OwnedProjects")
+  projectMemberships ProjectMember[]
 }
+
 
 model Invitation {
   id        String   @id @default(cuid())
@@ -44,17 +46,32 @@ model Invitation {
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
+  code        String         @unique
   description String?
-  status      String   @default("active")
-  budget      Float    @default(0)
+  status      String          @default("active")
+  budget      Float           @default(0)
+  
+  ownerId     String
+  owner       User          @relation("OwnedProjects", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  members     ProjectMember[]
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  
+  @@unique([projectId, userId])
 }
 
 model Client {
