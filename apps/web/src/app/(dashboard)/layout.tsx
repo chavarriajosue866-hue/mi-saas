@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { LayoutDashboard, Calendar, Users, FileText, FolderKanban, Settings, Search, LogOut } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, FileText, FolderKanban, FolderOpen, Settings, Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
