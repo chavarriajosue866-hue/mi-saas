@@ -16,7 +16,7 @@ export async function POST() {
     await prisma.$transaction([
       prisma.invoice.deleteMany({ where: { userId } }),
       prisma.appointment.deleteMany({ where: { userId } }),
-      prisma.project.deleteMany({ where: { userId } }),
+      prisma.project.deleteMany({ where: { ownerId: userId } }),
       prisma.client.deleteMany({ where: { userId } }),
     ]);
 
