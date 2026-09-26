@@ -79,7 +79,17 @@ export async function POST() {
       { name: "Migración a Cloud", description: "Migración de servidores a AWS", budget: 12000, status: "on-hold" },
       { name: "Dashboard Analytics", description: "Dashboard de métricas en tiempo real", budget: 8000, status: "active" },
     ];
-   await Promise.all(projectsData.map(proj => prisma.project.create({ data: { ...proj, ownerId: userId } })));
+       await Promise.all(
+      projectsData.map(proj => 
+        prisma.project.create({ 
+          data: { 
+            ...proj, 
+            ownerId: userId,
+            code: Math.random().toString(36).substring(2, 8).toUpperCase() // Genera código único
+          } 
+        })
+      )
+    );
 
     return NextResponse.json({ success: true, message: "Datos demo inyectados with éxito." });
 
